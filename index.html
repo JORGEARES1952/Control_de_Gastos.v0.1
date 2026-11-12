@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinanSim ARS - Control de Gastos Personales</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-hover: #334155;
+            --accent: #3b82f6;
+            --accent-green: #22c55e;
+            --accent-yellow: #eab308;
+            --accent-red: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            padding: 15px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Custom Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .title-area h1 {
+            font-size: 1.5rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .currency-badge {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--accent);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            border: 1px solid var(--accent);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            cursor: pointer;
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary { background-color: var(--accent); color: white; }
+        .btn-primary:hover { background-color: #2563eb; }
+        .btn-secondary { background-color: var(--bg-card-hover); color: var(--text-main); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background-color: #475569; }
+        .btn-danger { background-color: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); }
+        .btn-danger:hover { background-color: var(--accent-red); color: white; }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar-bg {
+            background-color: rgba(255, 255, 255, 0.1);
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s ease, background-color 0.4s ease;
+        }
+
+        .alert-box {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-weight: 600;
+            align-items: center;
+            gap: 10px;
+        }
+        .alert-warning { background-color: rgba(234, 179, 8, 0.15); border: 1px solid var(--accent-yellow); color: var(--accent-yellow); }
+        .alert-danger { background-color: rgba(239, 68, 68, 0.15); border: 1px solid var(--accent-red); color: var(--accent-red); }
+
+        .collapsible-panel {
+            display: none;
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        input, select {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 9px 12px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--accent);
+        }
+
+        .range-slider-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .range-slider-group input[type="range"] {
+            flex-grow: 1;
+            accent-color: var(--accent);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .main-content { grid-template-columns: 1fr; }
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: var(--bg-primary);
+            color: var(--text-muted);
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .badge {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-real { background-color: rgba(34, 197, 94, 0.2); color: var(--accent-green); }
+        .badge-sim { background-color: rgba(234, 179, 8, 0.2); color: var(--accent-yellow); }
+        .badge-fixed { background-color: rgba(59, 130, 246, 0.2); color: var(--accent); }
+
+        .chart-container {
+            position: relative;
+            height: 260px;
+            width: 100%;
+        }
+
+        .subcategories-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .tag {
+            background-color: var(--bg-primary);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .tag-remove {
+            cursor: pointer;
+            color: var(--accent-red);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="title-area">
+            <h1>📊 FinanSim <span class="currency-badge">$ ARS</span></h1>
+        </div>
+        <div class="header-actions">
+            <button class="btn-secondary" onclick="togglePanel('configPanel')">⚙️ Configurar Grupos & Presupuesto</button>
+            <button class="btn-primary" onclick="togglePanel('addExpensePanel')">➕ Registrar / Simular Gasto</button>
+            <button class="btn-danger" onclick="resetMonth()">🔄 Nuevo Mes</button>
+        </div>
+    </header>
+
+    <!-- Alertas emergentes -->
+    <div id="alertBox" class="alert-box"></div>
+
+    <!-- Panel de Configuración de Grupos y Presupuestos (Desplegable) -->
+    <div id="configPanel" class="card collapsible-panel">
+        <h3>⚙️ Configuración de Grupos, Subgrupos y Presupuesto Global</h3>
+        <div class="form-grid" style="margin-bottom: 15px;">
+            <div class="form-group">
+                <label>Presupuesto Total Mensual ($ ARS):</label>
+                <input type="number" id="globalBudgetInput" value="500000" onchange="updateGlobalBudget(this.value)">
+                <div class="range-slider-group" style="margin-top: 5px;">
+                    <input type="range" id="globalBudgetSlider" min="100000" max="3000000" step="50000" value="500000" oninput="syncBudgetSlider(this.value)">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Crear Nuevo Grupo de Gastos:</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="newGroupInput" placeholder="Ej: Automóvil, Hogar...">
+                    <button class="btn-primary" onclick="addNewGroup()">Agregar</button>
+                </div>
+            </div>
+        </div>
+
+        <h4>Añadir Subgrupos a un Grupo Existente:</h4>
+        <div class="form-grid" style="margin-bottom: 15px;">
+            <div class="form-group">
+                <label>Seleccionar Grupo:</label>
+                <select id="groupSelectForSub" onchange="renderSubcategoriesManager()"></select>
+            </div>
+            <div class="form-group">
+                <label>Nuevo Subgrupo:</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="newSubgroupInput" placeholder="Ej: Nafta, Aceite, Taller...">
+                    <button class="btn-secondary" onclick="addNewSubgroup()">Añadir</button>
+                </div>
+            </div>
+        </div>
+        <div id="subcategoriesManager" class="subcategories-list"></div>
+    </div>
+
+    <!-- Panel para Añadir/Simular Gasto (Desplegable) -->
+    <div id="addExpensePanel" class="card collapsible-panel">
+        <h3>💸 Registrar Nuevo Consumo o Simulación</h3>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Descripción:</label>
+                <input type="text" id="expDesc" placeholder="Ej: Carga de YPF / Cambio de filtro">
+            </div>
+            <div class="form-group">
+                <label>Grupo (Categoría):</label>
+                <select id="expGroup" onchange="updateSubgroupsSelect()"></select>
+            </div>
+            <div class="form-group">
+                <label>Subgrupo (Detalle):</label>
+                <select id="expSubgroup"></select>
+            </div>
+            <div class="form-group">
+                <label>Monto Total ($ ARS):</label>
+                <input type="number" id="expAmount" placeholder="0.00" oninput="calcCuotaPreview()">
+            </div>
+            <div class="form-group">
+                <label>Forma de Pago / Cuotas:</label>
+                <select id="expCuotas" onchange="calcCuotaPreview()">
+                    <option value="1">Contado / 1 Cuota</option>
+                    <option value="3">Tarjeta - 3 Cuotas</option>
+                    <option value="6">Tarjeta - 6 Cuotas</option>
+                    <option value="12">Tarjeta - 12 Cuotas</option>
+                    <option value="18">Tarjeta - 18 Cuotas</option>
+                    <option value="24">Tarjeta - 24 Cuotas</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Clasificación:</label>
+                <select id="expType">
+                    <option value="Variable">Gasto Variable</option>
+                    <option value="Fijo">Gasto Fijo Mensual</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Modo:</label>
+                <select id="expMode">
+                    <option value="Real">Real (Ejecutado)</option>
+                    <option value="Simulacion">Simulación (Prueba)</option>
+                </select>
+            </div>
+        </div>
+        <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div id="cuotaPreview" style="color: var(--accent); font-weight: 600; font-size: 0.9rem;"></div>
+            <button class="btn-primary" onclick="addExpense()">Guardar Registros</button>
+        </div>
+    </div>
+
+    <!-- Panel Principal de Indicadores -->
+    <div class="dashboard-grid">
+        <div class="card">
+            <div class="card-header">
+                <span>PRESUPUESTO GLOBAL</span>
+                <span>ARS</span>
+            </div>
+            <div class="stat-value" id="dispBudget">$ 0,00</div>
+            <span id="budgetSubtext" style="font-size: 0.85rem; color: var(--text-muted);">Asignado: $ 0,00</span>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span>GASTO TOTAL (REAL + SIMULADO)</span>
+                <span>EFECTIVO / TARJETA</span>
+            </div>
+            <div class="stat-value" id="dispTotalSpent">$ 0,00</div>
+            <div class="progress-bar-bg">
+                <div id="progressBar" class="progress-bar-fill"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span>DISPONIBLE RESTANTE</span>
+                <span>MARGEN</span>
+            </div>
+            <div class="stat-value" id="dispRemaining">$ 0,00</div>
+            <span id="remainingSubtext" style="font-size: 0.85rem; color: var(--accent-green);">Dentro del límite</span>
+        </div>
+    </div>
+
+    <!-- Contenido Principal: Gráficos y Tablas -->
+    <div class="main-content">
+        <div class="card">
+            <h3>📜 Historial de Movimientos y Simulación</h3>
+            <div class="table-wrapper" style="margin-top: 15px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Concepto</th>
+                            <th>Grupo / Subgrupo</th>
+                            <th>Monto Total</th>
+                            <th>Cuotas</th>
+                            <th>Cargo Mensual</th>
+                            <th>Modo</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="expenseTableBody">
+                        <!-- Transacciones inyectadas dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📊 Distribución por Grupos</h3>
+            <div class="chart-container" style="margin-top: 15px;">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Estructura de datos inicial
+        let state = {
+            budget: 500000,
+            groups: {
+                "Automóvil": ["Nafta", "Aceite", "Seguro", "Patente", "Taller / Repuestos"],
+                "Hogar & Servicios": ["Luz", "Gas", "Internet", "Expensas", "Alquiler"],
+                "Alimentación": ["Supermercado", "Verdulería", "Carnicería"],
+                "Salud & Farmacia": ["Remedios", "Obra Social"],
+                "Entretenimiento": ["Salidas", "Streaming"]
+            },
+            expenses: []
+        };
+
+        let myChart = null;
+
+        // Inicialización al cargar la página
+        window.onload = function() {
+            loadLocalStorage();
+            populateGroupSelects();
+            renderSubcategoriesManager();
+            updateDashboard();
+            initChart();
+        };
+
+        function togglePanel(id) {
+            const panel = document.getElementById(id);
+            panel.style.display = (panel.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function formatARS(val) {
+            return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 2 }).format(val);
+        }
+
+        function updateGlobalBudget(val) {
+            state.budget = parseFloat(val) || 0;
+            document.getElementById('globalBudgetSlider').value = state.budget;
+            saveLocalStorage();
+            updateDashboard();
+        }
+
+        function syncBudgetSlider(val) {
+            document.getElementById('globalBudgetInput').value = val;
+            state.budget = parseFloat(val) || 0;
+            saveLocalStorage();
+            updateDashboard();
+        }
+
+        function populateGroupSelects() {
+            const groupSelectForSub = document.getElementById('groupSelectForSub');
+            const expGroup = document.getElementById('expGroup');
+            
+            groupSelectForSub.innerHTML = '';
+            expGroup.innerHTML = '';
+
+            Object.keys(state.groups).forEach(group => {
+                const opt1 = document.createElement('option');
+                opt1.value = group; opt1.textContent = group;
+                groupSelectForSub.appendChild(opt1);
+
+                const opt2 = document.createElement('option');
+                opt2.value = group; opt2.textContent = group;
+                expGroup.appendChild(opt2);
+            });
+
+            updateSubgroupsSelect();
+        }
+
+        function updateSubgroupsSelect() {
+            const selectedGroup = document.getElementById('expGroup').value;
+            const expSubgroup = document.getElementById('expSubgroup');
+            expSubgroup.innerHTML = '';
+
+            if (selectedGroup && state.groups[selectedGroup]) {
+                state.groups[selectedGroup].forEach(sub => {
+                    const opt = document.createElement('option');
+                    opt.value = sub;
+                    opt.textContent = sub;
+                    expSubgroup.appendChild(opt);
+                });
+            }
+        }
+
+        function addNewGroup() {
+            const input = document.getElementById('newGroupInput');
+            const name = input.value.trim();
+            if (name && !state.groups[name]) {
+                state.groups[name] = ["General"];
+                input.value = '';
+                populateGroupSelects();
+                saveLocalStorage();
+            }
+        }
+
+        function addNewSubgroup() {
+            const group = document.getElementById('groupSelectForSub').value;
+            const input = document.getElementById('newSubgroupInput');
+            const subName = input.value.trim();
+
+            if (group && subName && !state.groups[group].includes(subName)) {
+                state.groups[group].push(subName);
+                input.value = '';
+                renderSubcategoriesManager();
+                updateSubgroupsSelect();
+                saveLocalStorage();
+            }
+        }
+
+        function removeSubgroup(group, sub) {
+            state.groups[group] = state.groups[group].filter(s => s !== sub);
+            renderSubcategoriesManager();
+            updateSubgroupsSelect();
+            saveLocalStorage();
+        }
+
+        function renderSubcategoriesManager() {
+            const group = document.getElementById('groupSelectForSub').value;
+            const container = document.getElementById('subcategoriesManager');
+            container.innerHTML = '';
+
+            if (group && state.groups[group]) {
+                state.groups[group].forEach(sub => {
+                    const tag = document.createElement('div');
+                    tag.className = 'tag';
+                    tag.innerHTML = `${sub} <span class="tag-remove" onclick="removeSubgroup('${group}', '${sub}')">✕</span>`;
+                    container.appendChild(tag);
+                });
+            }
+        }
+
+        function calcCuotaPreview() {
+            const amount = parseFloat(document.getElementById('expAmount').value) || 0;
+            const cuotas = parseInt(document.getElementById('expCuotas').value) || 1;
+            const preview = document.getElementById('cuotaPreview');
+
+            if (cuotas > 1 && amount > 0) {
+                const valorCuota = amount / cuotas;
+                preview.textContent = `Pagas ${cuotas} cuotas mensuales de ${formatARS(valorCuota)}`;
+            } else {
+                preview.textContent = '';
+            }
+        }
+
+        function addExpense() {
+            const desc = document.getElementById('expDesc').value.trim();
+            const group = document.getElementById('expGroup').value;
+            const subgroup = document.getElementById('expSubgroup').value;
+            const amount = parseFloat(document.getElementById('expAmount').value) || 0;
+            const cuotas = parseInt(document.getElementById('expCuotas').value) || 1;
+            const type = document.getElementById('expType').value;
+            const mode = document.getElementById('expMode').value;
+
+            if (!desc || amount <= 0) {
+                alert('Por favor, ingresa una descripción y un monto válido.');
+                return;
+            }
+
+            const item = {
+                id: Date.now(),
+                desc,
+                group,
+                subgroup,
+                amount,
+                cuotas,
+                monthlyCharge: amount / cuotas,
+                type,
+                mode
+            };
+
+            state.expenses.push(item);
+            saveLocalStorage();
+
+            // Limpiar formulario
+            document.getElementById('expDesc').value = '';
+            document.getElementById('expAmount').value = '';
+            document.getElementById('cuotaPreview').textContent = '';
+            togglePanel('addExpensePanel');
+
+            updateDashboard();
+        }
+
+        function deleteExpense(id) {
+            state.expenses = state.expenses.filter(e => e.id !== id);
+            saveLocalStorage();
+            updateDashboard();
+        }
+
+        function updateDashboard() {
+            let totalSpentMonthly = 0;
+            const tbody = document.getElementById('expenseTableBody');
+            tbody.innerHTML = '';
+
+            const groupTotals = {};
+
+            state.expenses.forEach(item => {
+                totalSpentMonthly += item.monthlyCharge;
+
+                // Para gráfico
+                groupTotals[item.group] = (groupTotals[item.group] || 0) + item.monthlyCharge;
+
+                // Inyectar en tabla
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${item.desc}</strong></td>
+                    <td>${item.group} <br><small style="color:var(--text-muted)">${item.subgroup}</small></td>
+                    <td>${formatARS(item.amount)}</td>
+                    <td>${item.cuotas > 1 ? item.cuotas + ' cuotas' : 'Contado'}</td>
+                    <td style="font-weight:bold; color:var(--accent)">${formatARS(item.monthlyCharge)}</td>
+                    <td><span class="badge ${item.mode === 'Real' ? 'badge-real' : 'badge-sim'}">${item.mode}</span></td>
+                    <td><button class="btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="deleteExpense(${item.id})">🗑️</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Actualizar tarjetas de resumen
+            const remaining = state.budget - totalSpentMonthly;
+            const percentageUsed = state.budget > 0 ? (totalSpentMonthly / state.budget) * 100 : 0;
+
+            document.getElementById('dispBudget').textContent = formatARS(state.budget);
+            document.getElementById('budgetSubtext').textContent = `Presupuesto asignado para el mes`;
+            document.getElementById('dispTotalSpent').textContent = formatARS(totalSpentMonthly);
+            document.getElementById('dispRemaining').textContent = formatARS(remaining);
+
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = `${Math.min(percentageUsed, 100)}%`;
+
+            // Control de color y Alertas
+            const alertBox = document.getElementById('alertBox');
+            const remainingSubtext = document.getElementById('remainingSubtext');
+
+            if (percentageUsed >= 100) {
+                progressBar.style.backgroundColor = 'var(--accent-red)';
+                alertBox.className = 'alert-box alert-danger';
+                alertBox.style.display = 'flex';
+                alertBox.innerHTML = `⚠️ <strong>¡ALERTA DE EXCESO PRESUPUESTARIO!</strong> Has superado tu presupuesto total por ${formatARS(Math.abs(remaining))}.`;
+                remainingSubtext.style.color = 'var(--accent-red)';
+                remainingSubtext.textContent = 'Presupuesto excedido';
+            } else if (percentageUsed >= 80) {
+                progressBar.style.backgroundColor = 'var(--accent-yellow)';
+                alertBox.className = 'alert-box alert-warning';
+                alertBox.style.display = 'flex';
+                alertBox.innerHTML = `⚡ <strong>PRECAUCIÓN:</strong> Has consumido el ${percentageUsed.toFixed(1)}% de tu presupuesto. Te quedan ${formatARS(remaining)}.`;
+                remainingSubtext.style.color = 'var(--accent-yellow)';
+                remainingSubtext.textContent = 'Cerca del límite';
+            } else {
+                progressBar.style.backgroundColor = 'var(--accent-green)';
+                alertBox.style.display = 'none';
+                remainingSubtext.style.color = 'var(--accent-green)';
+                remainingSubtext.textContent = 'Dentro del límite planificado';
+            }
+
+            updateChartData(groupTotals);
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: ['#3b82f6', '#22c55e', '#eab308', '#ef4444', '#a855f7', '#ec4899', '#14b8a6']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#f8fafc' } }
+                    }
+                }
+            });
+        }
+
+        function updateChartData(groupTotals) {
+            if (!myChart) return;
+            myChart.data.labels = Object.keys(groupTotals);
+            myChart.data.datasets[0].data = Object.values(groupTotals);
+            myChart.update();
+        }
+
+        function resetMonth() {
+            if (confirm('¿Estás seguro de reiniciar el mes? Se conservará la configuración de grupos pero se limpiarán las transacciones registrados.')) {
+                state.expenses = [];
+                saveLocalStorage();
+                updateDashboard();
+            }
+        }
+
+        function saveLocalStorage() {
+            localStorage.setItem('finansim_state_ars', JSON.stringify(state));
+        }
+
+        function loadLocalStorage() {
+            const saved = localStorage.getItem('finansim_state_ars');
+            if (saved) {
+                try {
+                    state = JSON.parse(saved);
+                    document.getElementById('globalBudgetInput').value = state.budget;
+                    document.getElementById('globalBudgetSlider').value = state.budget;
+                } catch(e) { console.error('Error cargando estado:', e); }
+            }
+        }
+    </script>
+</body>
+</html>
