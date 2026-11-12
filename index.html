@@ -23,7 +23,6 @@
     * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
     body { margin: 0; background: var(--fondo); color: var(--texto); padding-bottom: 40px; }
     
-    /* Pantalla de PIN */
     #login-screen {
       position: fixed; inset: 0; background: var(--primario); color: white;
       display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; padding: 20px;
@@ -37,7 +36,6 @@
       border: 2px solid var(--borde); border-radius: 8px; margin: 15px 0;
     }
 
-    /* Encabezado y Navegación */
     header {
       background: var(--primario); color: white; padding: 16px 20px;
       display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
@@ -59,12 +57,10 @@
     }
     nav button.active { color: var(--secundario); border-bottom-color: var(--secundario); background: #eff6ff; }
 
-    /* Contenedor principal */
     .container { max-width: 1100px; margin: 20px auto; padding: 0 15px; }
     .section { display: none; }
     .section.active { display: block; }
 
-    /* Tarjetas y Grillas */
     .grid-cards {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 20px;
     }
@@ -77,7 +73,6 @@
     .positivo { color: var(--verde); }
     .negativo { color: var(--rojo); }
 
-    /* Alertas */
     .alerta {
       padding: 12px 15px; border-radius: 8px; margin-bottom: 12px; border-left: 5px solid;
       display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
@@ -86,7 +81,6 @@
     .alerta-amarilla { background: var(--amarillo-bg); border-color: var(--amarillo); color: #713f12; }
     .alerta-verde { background: var(--verde-bg); border-color: var(--verde); color: #14532d; }
 
-    /* Formularios */
     .form-grid {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 15px;
     }
@@ -103,7 +97,6 @@
       padding: 6px 10px; font-size: 0.8rem; border-radius: 5px; border: none; cursor: pointer; font-weight: 600;
     }
 
-    /* Tablas */
     .table-responsive { overflow-x: auto; background: white; border-radius: 10px; border: 1px solid #e2e8f0; }
     table { width: 100%; border-collapse: collapse; min-width: 650px; }
     th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 0.92rem; }
@@ -124,7 +117,6 @@
 </head>
 <body>
 
-  <!-- Pantalla de acceso con PIN -->
   <div id="login-screen">
     <div id="login-box">
       <h2 style="margin-top:0;">Control Financiero</h2>
@@ -154,7 +146,6 @@
 
   <div class="container">
     
-    <!-- SECCIÓN 1: RESUMEN Y LIQUIDEZ -->
     <div id="resumen" class="section active">
       <div id="contenedor-alertas"></div>
 
@@ -185,7 +176,6 @@
       <div id="grid-bancos" class="grid-cards"></div>
     </div>
 
-    <!-- SECCIÓN 2: MOVIMIENTOS POR FECHA -->
     <div id="movimientos" class="section">
       <div class="card" style="margin-bottom:20px;">
         <h3 style="margin-bottom:15px;">Registrar Nuevo Movimiento</h3>
@@ -265,7 +255,6 @@
       </div>
     </div>
 
-    <!-- SECCIÓN 3: OBLIGACIONES Y PROYECCIÓN -->
     <div id="obligaciones" class="section">
       <div class="card" style="margin-bottom:20px;">
         <h3 style="margin-bottom:15px;">Programar Obligación a Vencer o Ingreso Futuro</h3>
@@ -324,7 +313,6 @@
       </div>
     </div>
 
-    <!-- SECCIÓN 4: CONFIGURAR BANCOS -->
     <div id="bancos" class="section">
       <div class="card" style="margin-bottom:20px;">
         <h3 style="margin-bottom:15px;">Agregar Banco o Actualizar Saldo Inicial</h3>
@@ -362,13 +350,11 @@
   </div>
 
   <script>
-    // URL DE CONEXIÓN A TU GOOGLE APPS SCRIPT
     const API_URL = "https://script.google.com/macros/s/AKfycbyy3L32h6TE7Tx0_gEcU76NdKIk60DBj1e39HqTZbhodzOSNPNeTjq9wQ9BOaiBwOYK/exec";
     
     let PIN_ACTUAL = localStorage.getItem("finanzas_pin") || "";
     let DATOS = { bancos: [], movimientos: [], obligaciones: [] };
 
-    // Inicializar fecha de hoy en formularios
     document.getElementById("mov-fecha").valueAsDate = new Date();
     document.getElementById("obl-fecha").valueAsDate = new Date();
 
@@ -404,17 +390,48 @@
       document.getElementById("loader").style.display = estado ? "block" : "none";
     }
 
-    async function cargarDatos(esLogin = false) {
+    function llamarApiJSONP(parametros) {
+      return new Promise((resolve, reject) => {
+        const nombreCallback = "cb_finanzas_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+        const query = new URLSearchParams({ ...parametros, pin: PIN_ACTUAL, callback: nombreCallback }).toString();
+        const script = document.createElement("script");
+        script.src = `${API_URL}?${query}`;
+
+        const timeout = setTimeout(() => {
+          limpiar();
+          reject(new Error("Tiempo de espera agotado"));
+        }, 15000);
+
+        function limpiar() {
+          clearTimeout(timeout);
+          delete window[nombreCallback];
+          if (script.parentNode) script.parentNode.removeChild(script);
+        }
+
+        window[nombreCallback] = (respuesta) => {
+          limpiar();
+          resolve(respuesta);
+        };
+
+        script.onerror = () => {
+          limpiar();
+          reject(new Error("Error de red al cargar el script"));
+        };
+
+        document.body.appendChild(script);
+      });
+    }
+
+    async function cargarDatos(esLogin = false, paramsExtra = {}) {
       mostrarLoader(true);
       try {
-        const resp = await fetch(`${API_URL}?pin=${encodeURIComponent(PIN_ACTUAL)}`);
-        const json = await resp.json();
+        const json = await llamarApiJSONP({ accion: "leer", ...paramsExtra });
         
         if (json.status === "error") {
           if (esLogin) {
             document.getElementById("login-error").innerText = "PIN incorrecto. Verificá tu clave.";
           } else {
-            alert("Error de acceso: " + json.message);
+            alert("Error: " + json.message);
           }
           mostrarLoader(false);
           return;
@@ -425,13 +442,12 @@
         DATOS = json;
         procesarYRenderizar();
       } catch (e) {
-        alert("No se pudo conectar con Google Drive. Revisá tu conexión a internet.");
+        alert("No se pudo conectar con Google Drive. Verificá que hayas actualizado la implementación en Apps Script.");
       }
       mostrarLoader(false);
     }
 
     function procesarYRenderizar() {
-      // 1. Actualizar selectores de bancos
       const selMov = document.getElementById("mov-banco");
       const selObl = document.getElementById("obl-banco");
       const selFiltro = document.getElementById("filtro-banco");
@@ -447,7 +463,6 @@
         selFiltro.innerHTML += opt;
       });
 
-      // 2. Calcular saldos reales por banco
       const saldosPorBanco = {};
       DATOS.bancos.forEach(b => {
         saldosPorBanco[b.Entidad] = {
@@ -465,14 +480,10 @@
         if (!saldosPorBanco[m.Banco]) {
           saldosPorBanco[m.Banco] = { inicial: 0, actual: 0, limite: 0, tipo: "Cuenta", pendientePagar: 0, pendienteCobrar: 0 };
         }
-        if (m.Tipo_Movimiento === "Entrada") {
-          saldosPorBanco[m.Banco].actual += monto;
-        } else {
-          saldosPorBanco[m.Banco].actual -= monto;
-        }
+        if (m.Tipo_Movimiento === "Entrada") saldosPorBanco[m.Banco].actual += monto;
+        else saldosPorBanco[m.Banco].actual -= monto;
       });
 
-      // 3. Procesar obligaciones pendientes y alertas
       const hoy = new Date();
       hoy.setHours(0,0,0,0);
       
@@ -506,7 +517,7 @@
               htmlAlertas += `<div class="alerta alerta-roja"><span>⚠️ <strong>VENCIDO:</strong> ${o.Concepto} (${o.Banco_Asignado}) por <strong>${formatoPesos(monto)}</strong></span><span>Venció el ${fechaStr}</span></div>`;
             } else if (diffDias <= 5) {
               badgeEstado = `<span class="badge badge-out">Vence en ${diffDias} d</span>`;
-              htmlAlertas += `<div class="alerta alerta-amarilla"><span>⏰ <strong>PRÓXIMO VENCIMIENTO:</strong> ${o.Concepto} (${o.Banco_Asignado}) por <strong>${formatoPesos(monto)}</strong></span><span>Vence el ${fechaStr}</span></div>`;
+              htmlAlertas += `<div class="alerta alerta-amarilla"><span>⏰ <strong>PRÓXIMO VENCIMIENTO:</strong> ${o.Concepto} (${o.Banco_Asignado}) por <strong>${formatoPesos(monto)}</strong></span><span>Vence el${fechaStr}</span></div>`;
             } else {
               badgeEstado = `<span class="badge">En ${diffDias} días</span>`;
             }
@@ -528,7 +539,6 @@
         `;
       });
 
-      // 4. Renderizar Tarjetas por Banco y Alertas de Liquidez
       const gridBancos = document.getElementById("grid-bancos");
       gridBancos.innerHTML = "";
       let totalLiquidezActual = 0;
@@ -559,149 +569,3 @@
                 Proyectado: <span class="${proyectadoBanco >= 0 ? 'positivo' : 'negativo'}">${formatoPesos(proyectadoBanco)}</span>
               </div>
               ${info.limite > 0 ? `<div style="font-size:0.8rem;">Con acuerdo (${formatoPesos(info.limite)}): ${formatoPesos(disponibleConAcuerdo)}</div>` : ''}
-            </div>
-          </div>
-        `;
-      });
-
-      document.getElementById("contenedor-alertas").innerHTML = htmlAlertas || `<div class="alerta alerta-verde">✅ Todas tus cuentas tienen liquidez suficiente para cubrir las obligaciones agendadas.</div>`;
-      document.getElementById("total-actual").innerText = formatoPesos(totalLiquidezActual);
-      document.getElementById("total-ingresos-futuros").innerText = formatoPesos(totalIngresosFuturos);
-      document.getElementById("total-egresos-futuros").innerText = formatoPesos(totalEgresosFuturos);
-      
-      const netoFinal = totalLiquidezActual + totalIngresosFuturos - totalEgresosFuturos;
-      const elProy = document.getElementById("total-proyectado");
-      elProy.innerText = formatoPesos(netoFinal);
-      elProy.className = "monto-grande " + (netoFinal >= 0 ? "positivo" : "negativo");
-
-      renderizarMovimientos();
-    }
-
-    function renderizarMovimientos() {
-      const filtroBanco = document.getElementById("filtro-banco").value;
-      const filtroTipo = document.getElementById("filtro-tipo").value;
-      const tbody = document.getElementById("tabla-movimientos");
-      tbody.innerHTML = "";
-
-      // Ordenar cronológicamente de más antiguo a más reciente para calcular saldo acumulado real
-      let movs = [...DATOS.movimientos].sort((a, b) => new Date(a.Fecha) - new Date(b.Fecha));
-      
-      let saldoAcumulado = 0;
-      if (filtroBanco === "TODOS") {
-        DATOS.bancos.forEach(b => saldoAcumulado += (Number(b.Saldo_Inicial) || 0));
-      } else {
-        const bco = DATOS.bancos.find(b => b.Entidad === filtroBanco);
-        if (bco) saldoAcumulado = Number(bco.Saldo_Inicial) || 0;
-      }
-
-      const filasCalculadas = [];
-      movs.forEach(m => {
-        if (filtroBanco !== "TODOS" && m.Banco !== filtroBanco) return;
-        const monto = Number(m.Monto) || 0;
-        if (m.Tipo_Movimiento === "Entrada") saldoAcumulado += monto;
-        else saldoAcumulado -= monto;
-
-        if (filtroTipo !== "TODOS" && m.Tipo_Movimiento !== filtroTipo) return;
-
-        filasCalculadas.push({ ...m, saldoResultante: saldoAcumulado });
-      });
-
-      // Mostrar los más recientes arriba
-      filasCalculadas.reverse().forEach(m => {
-        const fechaStr = m.Fecha ? m.Fecha.toString().split("T")[0] : "";
-        const esEntrada = m.Tipo_Movimiento === "Entrada";
-        const monto = Number(m.Monto) || 0;
-
-        tbody.innerHTML += `
-          <tr>
-            <td><strong>${fechaStr}</strong></td>
-            <td>${m.Banco}</td>
-            <td>
-              <span class="badge ${esEntrada ? 'badge-in' : 'badge-out'}">${m.Tipo_Movimiento}</span>
-              ${m.Subtipo === 'Extraordinario' ? '<span class="badge badge-extra">Extra</span>' : ''}
-            </td>
-            <td><strong>${m.Categoria}</strong><br><small style="color:var(--gris);">${m.Descripcion}</small></td>
-            <td style="text-align:right;" class="positivo">${esEntrada ? formatoPesos(monto) : '—'}</td>
-            <td style="text-align:right;" class="negativo">${!esEntrada ? formatoPesos(monto) : '—'}</td>
-            <td style="text-align:right; font-weight:700;">${formatoPesos(m.saldoResultante)}</td>
-          </tr>
-        `;
-      });
-    }
-
-    async function enviarPost(datos) {
-      mostrarLoader(true);
-      try {
-        await fetch(API_URL, {
-          method: "POST",
-          body: JSON.stringify({ ...datos, pin: PIN_ACTUAL })
-        });
-        await cargarDatos();
-      } catch (e) {
-        alert("Error al guardar en la nube.");
-        mostrarLoader(false);
-      }
-    }
-
-    function guardarMovimiento(e) {
-      e.preventDefault();
-      enviarPost({
-        accion: "nuevo_movimiento",
-        fecha: document.getElementById("mov-fecha").value,
-        tipo_movimiento: document.getElementById("mov-tipo").value,
-        subtipo: document.getElementById("mov-subtipo").value,
-        banco: document.getElementById("mov-banco").value,
-        categoria: document.getElementById("mov-categoria").value,
-        descripcion: document.getElementById("mov-desc").value,
-        monto: document.getElementById("mov-monto").value
-      });
-      document.getElementById("mov-desc").value = "";
-      document.getElementById("mov-monto").value = "";
-    }
-
-    function guardarObligacion(e) {
-      e.preventDefault();
-      enviarPost({
-        accion: "nueva_obligacion",
-        fecha_vencimiento: document.getElementById("obl-fecha").value,
-        tipo: document.getElementById("obl-tipo").value,
-        frecuencia: document.getElementById("obl-frecuencia").value,
-        banco_asignado: document.getElementById("obl-banco").value,
-        concepto: document.getElementById("obl-concepto").value,
-        monto_estimado: document.getElementById("obl-monto").value
-      });
-      document.getElementById("obl-concepto").value = "";
-      document.getElementById("obl-monto").value = "";
-    }
-
-    async function marcarPagado(id, tipo, banco, concepto, monto, frecuencia) {
-      if (!confirm(`¿Confirmás registrar "${concepto}" por ${formatoPesos(monto)} en ${banco} y descontarlo/acreditarlo en tus movimientos de hoy?`)) return;
-      
-      const hoyStr = new Date().toISOString().split("T")[0];
-      await enviarPost({ accion: "pagar_obligacion", id: id });
-      await enviarPost({
-        accion: "nuevo_movimiento",
-        fecha: hoyStr,
-        tipo_movimiento: tipo === "Ingreso Esperado" ? "Entrada" : "Salida",
-        subtipo: frecuencia === "Mensual" ? "Regular" : "Extraordinario",
-        banco: banco,
-        categoria: "Vencimiento Agendado",
-        descripcion: concepto,
-        monto: monto
-      });
-    }
-
-    function guardarBanco(e) {
-      e.preventDefault();
-      enviarPost({
-        accion: "guardar_banco",
-        entidad: document.getElementById("bco-nombre").value.trim(),
-        tipo: document.getElementById("bco-tipo").value,
-        saldo_inicial: document.getElementById("bco-saldo").value,
-        limite_descubierto: document.getElementById("bco-limite").value
-      });
-      document.getElementById("bco-nombre").value = "";
-    }
-  </script>
-</body>
-</html>
