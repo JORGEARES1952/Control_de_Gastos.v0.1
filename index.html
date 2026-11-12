@@ -349,353 +349,353 @@
 
   </div>
 
-  <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxx9jeESh40NQOK2Vy3fZpFc2hZHNSyL3c2Wi2YyYvvfqcJoB9zKJRJil4DcYBNSZEs/exec";
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbxx9jeESh40NQOK2Vy3fZpFc2hZHNSyL3c2Wi2YyYvvfqcJoB9zKJRJil4DcYBNSZEs/exec";
+
+let PIN_ACTUAL = localStorage.getItem("finanzas_pin") || "";
+let DATOS = { bancos: [], movimientos: [], obligaciones: [] };
+
+document.getElementById("mov-fecha").valueAsDate = new Date();
+document.getElementById("obl-fecha").valueAsDate = new Date();
+
+if (PIN_ACTUAL) {
+  document.getElementById("login-screen").style.display = "none";
+  cargarDatos();
+}
+
+function iniciarSesion() {
+  const pin = document.getElementById("pin-input").value.trim();
+  if (!pin) return;
+  PIN_ACTUAL = pin;
+  cargarDatos(true);
+}
+
+function cerrarSesion() {
+  localStorage.removeItem("finanzas_pin");
+  location.reload();
+}
+
+function cambiarTab(id, btn) {
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  btn.classList.add("active");
+}
+
+function formatoPesos(valor) {
+  return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(Number(valor) || 0);
+}
+
+function mostrarLoader(estado) {
+  document.getElementById("loader").style.display = estado ? "block" : "none";
+}
+
+function llamarApiJSONP(parametros) {
+  return new Promise((resolve, reject) => {
+    const nombreCallback = "cb_finanzas_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+    const query = new URLSearchParams({ ...parametros, pin: PIN_ACTUAL, callback: nombreCallback }).toString();
+    const script = document.createElement("script");
+    script.src = `${API_URL}?${query}`;
+
+    const timeout = setTimeout(() => {
+      limpiar();
+      reject(new Error("Tiempo de espera agotado"));
+    }, 15000);
+
+    function limpiar() {
+      clearTimeout(timeout);
+      delete window[nombreCallback];
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+
+    window[nombreCallback] = (respuesta) => {
+      limpiar();
+      resolve(respuesta);
+    };
+
+    script.onerror = () => {
+      limpiar();
+      reject(new Error("Error de red al cargar el script"));
+    };
+
+    document.body.appendChild(script);
+  });
+}
+
+async function cargarDatos(esLogin = false, paramsExtra = {}) {
+  mostrarLoader(true);
+  try {
+    const json = await llamarApiJSONP({ accion: "leer", ...paramsExtra });
     
-    let PIN_ACTUAL = localStorage.getItem("finanzas_pin") || "";
-    let DATOS = { bancos: [], movimientos: [], obligaciones: [] };
-
-    document.getElementById("mov-fecha").valueAsDate = new Date();
-    document.getElementById("obl-fecha").valueAsDate = new Date();
-
-    if (PIN_ACTUAL) {
-      document.getElementById("login-screen").style.display = "none";
-      cargarDatos();
-    }
-
-    function iniciarSesion() {
-      const pin = document.getElementById("pin-input").value.trim();
-      if (!pin) return;
-      PIN_ACTUAL = pin;
-      cargarDatos(true);
-    }
-
-    function cerrarSesion() {
-      localStorage.removeItem("finanzas_pin");
-      location.reload();
-    }
-
-    function cambiarTab(id, btn) {
-      document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-      document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
-      document.getElementById(id).classList.add("active");
-      btn.classList.add("active");
-    }
-
-    function formatoPesos(valor) {
-      return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(Number(valor) || 0);
-    }
-
-    function mostrarLoader(estado) {
-      document.getElementById("loader").style.display = estado ? "block" : "none";
-    }
-
-    function llamarApiJSONP(parametros) {
-      return new Promise((resolve, reject) => {
-        const nombreCallback = "cb_finanzas_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
-        const query = new URLSearchParams({ ...parametros, pin: PIN_ACTUAL, callback: nombreCallback }).toString();
-        const script = document.createElement("script");
-        script.src = `${API_URL}?${query}`;
-
-        const timeout = setTimeout(() => {
-          limpiar();
-          reject(new Error("Tiempo de espera agotado"));
-        }, 15000);
-
-        function limpiar() {
-          clearTimeout(timeout);
-          delete window[nombreCallback];
-          if (script.parentNode) script.parentNode.removeChild(script);
-        }
-
-        window[nombreCallback] = (respuesta) => {
-          limpiar();
-          resolve(respuesta);
-        };
-
-        script.onerror = () => {
-          limpiar();
-          reject(new Error("Error de red al cargar el script"));
-        };
-
-        document.body.appendChild(script);
-      });
-    }
-
-    async function cargarDatos(esLogin = false, paramsExtra = {}) {
-      mostrarLoader(true);
-      try {
-        const json = await llamarApiJSONP({ accion: "leer", ...paramsExtra });
-        
-        if (json.status === "error") {
-          if (esLogin) {
-            document.getElementById("login-error").innerText = "PIN incorrecto. Verificá tu clave.";
-          } else {
-            alert("Error: " + json.message);
-          }
-          mostrarLoader(false);
-          return;
-        }
-
-        localStorage.setItem("finanzas_pin", PIN_ACTUAL);
-        document.getElementById("login-screen").style.display = "none";
-        DATOS = json;
-        procesarYRenderizar();
-      } catch (e) {
-        alert("No se pudo conectar con Google Drive. Verificá que hayas actualizado la implementación en Apps Script.");
+    if (json.status === "error") {
+      if (esLogin) {
+        document.getElementById("login-error").innerText = "PIN incorrecto. Verificá tu clave.";
+      } else {
+        alert("Error: " + json.message);
       }
       mostrarLoader(false);
+      return;
     }
 
-    function procesarYRenderizar() {
-      const selMov = document.getElementById("mov-banco");
-      const selObl = document.getElementById("obl-banco");
-      const selFiltro = document.getElementById("filtro-banco");
-      
-      selMov.innerHTML = "";
-      selObl.innerHTML = "";
-      selFiltro.innerHTML = '<option value="TODOS">Todos los bancos</option>';
+    localStorage.setItem("finanzas_pin", PIN_ACTUAL);
+    document.getElementById("login-screen").style.display = "none";
+    DATOS = json;
+    procesarYRenderizar();
+  } catch (e) {
+    alert("No se pudo conectar con Google Drive. Verificá que hayas actualizado la implementación en Apps Script.");
+  }
+  mostrarLoader(false);
+}
 
-      DATOS.bancos.forEach(b => {
-        const opt = `<option value="${b.Entidad}">${b.Entidad}</option>`;
-        selMov.innerHTML += opt;
-        selObl.innerHTML += opt;
-        selFiltro.innerHTML += opt;
-      });
+function procesarYRenderizar() {
+  const selMov = document.getElementById("mov-banco");
+  const selObl = document.getElementById("obl-banco");
+  const selFiltro = document.getElementById("filtro-banco");
+  
+  selMov.innerHTML = "";
+  selObl.innerHTML = "";
+  selFiltro.innerHTML = '<option value="TODOS">Todos los bancos</option>';
 
-      const saldosPorBanco = {};
-      DATOS.bancos.forEach(b => {
-        saldosPorBanco[b.Entidad] = {
-          inicial: Number(b.Saldo_Inicial) || 0,
-          actual: Number(b.Saldo_Inicial) || 0,
-          limite: Number(b.Limite_Descubierto) || 0,
-          tipo: b.Tipo,
-          pendientePagar: 0,
-          pendienteCobrar: 0
-        };
-      });
+  DATOS.bancos.forEach(b => {
+    const opt = `<option value="${b.Entidad}">${b.Entidad}</option>`;
+    selMov.innerHTML += opt;
+    selObl.innerHTML += opt;
+    selFiltro.innerHTML += opt;
+  });
 
-      DATOS.movimientos.forEach(m => {
-        const monto = Number(m.Monto) || 0;
-        if (!saldosPorBanco[m.Banco]) {
-          saldosPorBanco[m.Banco] = { inicial: 0, actual: 0, limite: 0, tipo: "Cuenta", pendientePagar: 0, pendienteCobrar: 0 };
-        }
-        if (m.Tipo_Movimiento === "Entrada") saldosPorBanco[m.Banco].actual += monto;
-        else saldosPorBanco[m.Banco].actual -= monto;
-      });
+  const saldosPorBanco = {};
+  DATOS.bancos.forEach(b => {
+    saldosPorBanco[b.Entidad] = {
+      inicial: Number(b.Saldo_Inicial) || 0,
+      actual: Number(b.Saldo_Inicial) || 0,
+      limite: Number(b.Limite_Descubierto) || 0,
+      tipo: b.Tipo,
+      pendientePagar: 0,
+      pendienteCobrar: 0
+    };
+  });
 
-      const hoy = new Date();
-      hoy.setHours(0,0,0,0);
-      
-      let totalIngresosFuturos = 0;
-      let totalEgresosFuturos = 0;
-      let htmlAlertas = "";
-
-      const obligacionesOrdenadas = [...DATOS.obligaciones].sort((a, b) => new Date(a.Fecha_Vencimiento) - new Date(b.Fecha_Vencimiento));
-      const tbodyObl = document.getElementById("tabla-obligaciones");
-      tbodyObl.innerHTML = "";
-
-      obligacionesOrdenadas.forEach(o => {
-        const fechaStr = o.Fecha_Vencimiento ? o.Fecha_Vencimiento.toString().split("T")[0] : "";
-        const fechaVenc = new Date(fechaStr + "T00:00:00");
-        const diffDias = Math.ceil((fechaVenc - hoy) / (1000 * 60 * 60 * 24));
-        const monto = Number(o.Monto_Estimado) || 0;
-        const pendiente = o.Estado !== "Completado";
-
-        let badgeEstado = `<span class="badge badge-in">Completado</span>`;
-        if (pendiente) {
-          if (o.Tipo === "Ingreso Esperado") {
-            totalIngresosFuturos += monto;
-            if (saldosPorBanco[o.Banco_Asignado]) saldosPorBanco[o.Banco_Asignado].pendienteCobrar += monto;
-            badgeEstado = `<span class="badge badge-extra">A cobrar (${diffDias} días)</span>`;
-          } else {
-            totalEgresosFuturos += monto;
-            if (saldosPorBanco[o.Banco_Asignado]) saldosPorBanco[o.Banco_Asignado].pendientePagar += monto;
-
-            if (diffDias < 0) {
-              badgeEstado = `<span class="badge badge-out">VENCIDO (${Math.abs(diffDias)} d)</span>`;
-              htmlAlertas += `<div class="alerta alerta-roja"><span>⚠️ <strong>VENCIDO:</strong> ${o.Concepto} (${o.Banco_Asignado}) por <strong>${formatoPesos(monto)}</strong></span><span>Venció el ${fechaStr}</span></div>`;
-            } else if (diffDias <= 5) {
-              badgeEstado = `<span class="badge badge-out">Vence en ${diffDias} d</span>`;
-              htmlAlertas += `<div class="alerta alerta-amarilla"><span>⏰ <strong>PRÓXIMO VENCIMIENTO:</strong> ${o.Concepto} (${o.Banco_Asignado}) por <strong>${formatoPesos(monto)}</strong></span><span>Vence el ${fechaStr}</span></div>`;
-            } else {
-              badgeEstado = `<span class="badge">En ${diffDias} días</span>`;
-            }
-          }
-        }
-
-        tbodyObl.innerHTML += `
-          <tr>
-            <td><strong>${fechaStr}</strong></td>
-            <td>${badgeEstado}</td>
-            <td>${o.Tipo} <small style="color:var(--gris);">(${o.Frecuencia})</small></td>
-            <td>${o.Banco_Asignado}</td>
-            <td>${o.Concepto}</td>
-            <td style="text-align:right; font-weight:600;" class="${o.Tipo === 'Ingreso Esperado' ? 'positivo' : 'negativo'}">${formatoPesos(monto)}</td>
-            <td>
-              ${pendiente ? `<button type="button" class="btn-small" style="background:var(--secundario); color:white;" onclick="marcarPagado('${o.ID}', '${o.Tipo}', '${o.Banco_Asignado}', '${o.Concepto}', ${monto}, '${o.Frecuencia}')">✔ Registrar</button>` : '—'}
-            </td>
-          </tr>
-        `;
-      });
-
-      const gridBancos = document.getElementById("grid-bancos");
-      gridBancos.innerHTML = "";
-      let totalLiquidezActual = 0;
-
-      Object.keys(saldosPorBanco).forEach(nombre => {
-        const info = saldosPorBanco[nombre];
-        totalLiquidezActual += info.actual;
-        const proyectadoBanco = info.actual + info.pendienteCobrar - info.pendientePagar;
-        const disponibleConAcuerdo = proyectadoBanco + info.limite;
-
-        if (proyectadoBanco < 0) {
-          htmlAlertas += `
-            <div class="alerta alerta-roja">
-              <span>🚨 <strong>ALERTA DE LIQUIDEZ EN ${nombre.toUpperCase()}:</strong> Faltarán <strong>${formatoPesos(Math.abs(proyectadoBanco))}</strong> para cubrir los vencimientos asignados a esta cuenta.</span>
-              <span>Saldo hoy: ${formatoPesos(info.actual)}</span>
-            </div>
-          `;
-        }
-
-        gridBancos.innerHTML += `
-          <div class="card">
-            <h3>${nombre}</h3>
-            <div class="monto-grande ${info.actual >= 0 ? 'positivo' : 'negativo'}">${formatoPesos(info.actual)}</div>
-            <div style="font-size:0.85rem; color:var(--gris); margin-top:8px; border-top:1px solid #f1f5f9; padding-top:8px;">
-              <div>+ A cobrar: <strong class="positivo">${formatoPesos(info.pendienteCobrar)}</strong></div>
-              <div>- A pagar: <strong class="negativo">${formatoPesos(info.pendientePagar)}</strong></div>
-              <div style="margin-top:4px; font-weight:600; color:var(--texto);">
-                Proyectado: <span class="${proyectadoBanco >= 0 ? 'positivo' : 'negativo'}">${formatoPesos(proyectadoBanco)}</span>
-              </div>
-              ${info.limite > 0 ? `<div style="font-size:0.8rem;">Con acuerdo (${formatoPesos(info.limite)}): ${formatoPesos(disponibleConAcuerdo)}</div>` : ''}
-            </div>
-          </div>
-        `;
-      });
-
-      document.getElementById("contenedor-alertas").innerHTML = htmlAlertas || `<div class="alerta alerta-verde">✅ Todas tus cuentas tienen liquidez suficiente para cubrir las obligaciones agendadas.</div>`;
-      document.getElementById("total-actual").innerText = formatoPesos(totalLiquidezActual);
-      document.getElementById("total-ingresos-futuros").innerText = formatoPesos(totalIngresosFuturos);
-      document.getElementById("total-egresos-futuros").innerText = formatoPesos(totalEgresosFuturos);
-      
-      const netoFinal = totalLiquidezActual + totalIngresosFuturos - totalEgresosFuturos;
-      const elProy = document.getElementById("total-proyectado");
-      elProy.innerText = formatoPesos(netoFinal);
-      elProy.className = "monto-grande " + (netoFinal >= 0 ? "positivo" : "negativo");
-
-      renderizarMovimientos();
+  DATOS.movimientos.forEach(m => {
+    const monto = Number(m.Monto) || 0;
+    if (!saldosPorBanco[m.Banco]) {
+      saldosPorBanco[m.Banco] = { inicial: 0, actual: 0, limite: 0, tipo: "Cuenta", pendientePagar: 0, pendienteCobrar: 0 };
     }
+    if (m.Tipo_Movimiento === "Entrada") saldosPorBanco[m.Banco].actual += monto;
+    else saldosPorBanco[m.Banco].actual -= monto;
+  });
 
-    function renderizarMovimientos() {
-      const filtroBanco = document.getElementById("filtro-banco").value;
-      const filtroTipo = document.getElementById("filtro-tipo").value;
-      const tbody = document.getElementById("tabla-movimientos");
-      tbody.innerHTML = "";
+  const hoy = new Date();
+  hoy.setHours(0,0,0,0);
+  
+  let totalIngresosFuturos = 0;
+  let totalEgresosFuturos = 0;
+  let htmlAlertas = "";
 
-      let movs = [...DATOS.movimientos].sort((a, b) => new Date(a.Fecha) - new Date(b.Fecha));
-      
-      let saldoAcumulado = 0;
-      if (filtroBanco === "TODOS") {
-        DATOS.bancos.forEach(b => saldoAcumulado += (Number(b.Saldo_Inicial) || 0));
+  const obligacionesOrdenadas = [...DATOS.obligaciones].sort((a, b) => new Date(a.Fecha_Vencimiento) - new Date(b.Fecha_Vencimiento));
+  const tbodyObl = document.getElementById("tabla-obligaciones");
+  tbodyObl.innerHTML = "";
+
+  obligacionesOrdenadas.forEach(o => {
+    const fechaStr = o.Fecha_Vencimiento ? o.Fecha_Vencimiento.toString().split("T")[0] : "";
+    const fechaVenc = new Date(fechaStr + "T00:00:00");
+    const diffDias = Math.ceil((fechaVenc - hoy) / (1000 * 60 * 60 * 24));
+    const monto = Number(o.Monto_Estimado) || 0;
+    const pendiente = o.Estado !== "Completado";
+
+    let badgeEstado = `<span class="badge badge-in">Completado</span>`;
+    if (pendiente) {
+      if (o.Tipo === "Ingreso Esperado") {
+        totalIngresosFuturos += monto;
+        if (saldosPorBanco[o.Banco_Asignado]) saldosPorBanco[o.Banco_Asignado].pendienteCobrar += monto;
+        badgeEstado = `<span class="badge badge-extra">A cobrar (${diffDias} días)</span>`;
       } else {
-        const bco = DATOS.bancos.find(b => b.Entidad === filtroBanco);
-        if (bco) saldoAcumulado = Number(bco.Saldo_Inicial) || 0;
+        totalEgresosFuturos += monto;
+        if (saldosPorBanco[o.Banco_Asignado]) saldosPorBanco[o.Banco_Asignado].pendientePagar += monto;
+
+        if (diffDias < 0) {
+          badgeEstado = `<span class="badge badge-out">VENCIDO (${Math.abs(diffDias)} d)</span>`;
+          htmlAlertas += `<div class="alerta alerta-roja"><span>⚠️ <strong>VENCIDO:</strong> ${o.Concepto} (${o.Banco_Asignado}) por <strong>${formatoPesos(monto)}</strong></span><span>Venció el ${fechaStr}</span></div>`;
+        } else if (diffDias <= 5) {
+          badgeEstado = `<span class="badge badge-out">Vence en ${diffDias} d</span>`;
+          htmlAlertas += `<div class="alerta alerta-amarilla"><span>⏰ <strong>PRÓXIMO VENCIMIENTO:</strong> ${o.Concepto} (${o.Banco_Asignado}) por <strong>${formatoPesos(monto)}</strong></span><span>Vence el ${fechaStr}</span></div>`;
+        } else {
+          badgeEstado = `<span class="badge">En ${diffDias} días</span>`;
+        }
       }
-
-      const filasCalculadas = [];
-      movs.forEach(m => {
-        if (filtroBanco !== "TODOS" && m.Banco !== filtroBanco) return;
-        const monto = Number(m.Monto) || 0;
-        if (m.Tipo_Movimiento === "Entrada") saldoAcumulado += monto;
-        else saldoAcumulado -= monto;
-
-        if (filtroTipo !== "TODOS" && m.Tipo_Movimiento !== filtroTipo) return;
-
-        filasCalculadas.push({ ...m, saldoResultante: saldoAcumulado });
-      });
-
-      filasCalculadas.reverse().forEach(m => {
-        const fechaStr = m.Fecha ? m.Fecha.toString().split("T")[0] : "";
-        const esEntrada = m.Tipo_Movimiento === "Entrada";
-        const monto = Number(m.Monto) || 0;
-
-        tbody.innerHTML += `
-          <tr>
-            <td><strong>${fechaStr}</strong></td>
-            <td>${m.Banco}</td>
-            <td>
-              <span class="badge ${esEntrada ? 'badge-in' : 'badge-out'}">${m.Tipo_Movimiento}</span>
-              ${m.Subtipo === 'Extraordinario' ? '<span class="badge badge-extra">Extra</span>' : ''}
-            </td>
-            <td><strong>${m.Categoria}</strong><br><small style="color:var(--gris);">${m.Descripcion}</small></td>
-            <td style="text-align:right;" class="positivo">${esEntrada ? formatoPesos(monto) : '—'}</td>
-            <td style="text-align:right;" class="negativo">${!esEntrada ? formatoPesos(monto) : '—'}</td>
-            <td style="text-align:right; font-weight:700;">${formatoPesos(m.saldoResultante)}</td>
-          </tr>
-        `;
-      });
     }
 
-    function guardarMovimiento(e) {
-      e.preventDefault();
-      cargarDatos(false, {
-        accion: "nuevo_movimiento",
-        fecha: document.getElementById("mov-fecha").value,
-        tipo_movimiento: document.getElementById("mov-tipo").value,
-        subtipo: document.getElementById("mov-subtipo").value,
-        banco: document.getElementById("mov-banco").value,
-        categoria: document.getElementById("mov-categoria").value,
-        descripcion: document.getElementById("mov-desc").value,
-        monto: document.getElementById("mov-monto").value
-      });
-      document.getElementById("mov-desc").value = "";
-      document.getElementById("mov-monto").value = "";
+    tbodyObl.innerHTML += `
+      <tr>
+        <td><strong>${fechaStr}</strong></td>
+        <td>${badgeEstado}</td>
+        <td>${o.Tipo} <small style="color:var(--gris);">(${o.Frecuencia})</small></td>
+        <td>${o.Banco_Asignado}</td>
+        <td>${o.Concepto}</td>
+        <td style="text-align:right; font-weight:600;" class="${o.Tipo === 'Ingreso Esperado' ? 'positivo' : 'negativo'}">${formatoPesos(monto)}</td>
+        <td>
+          ${pendiente ? `<button type="button" class="btn-small" style="background:var(--secundario); color:white;" onclick="marcarPagado('${o.ID}', '${o.Tipo}', '${o.Banco_Asignado}', '${o.Concepto}', ${monto}, '${o.Frecuencia}')">✔ Registrar</button>` : '—'}
+        </td>
+      </tr>
+    `;
+  });
+
+  const gridBancos = document.getElementById("grid-bancos");
+  gridBancos.innerHTML = "";
+  let totalLiquidezActual = 0;
+
+  Object.keys(saldosPorBanco).forEach(nombre => {
+    const info = saldosPorBanco[nombre];
+    totalLiquidezActual += info.actual;
+    const proyectadoBanco = info.actual + info.pendienteCobrar - info.pendientePagar;
+    const disponibleConAcuerdo = proyectadoBanco + info.limite;
+
+    if (proyectadoBanco < 0) {
+      htmlAlertas += `
+        <div class="alerta alerta-roja">
+          <span>🚨 <strong>ALERTA DE LIQUIDEZ EN ${nombre.toUpperCase()}:</strong> Faltarán <strong>${formatoPesos(Math.abs(proyectadoBanco))}</strong> para cubrir los vencimientos asignados a esta cuenta.</span>
+          <span>Saldo hoy: ${formatoPesos(info.actual)}</span>
+        </div>
+      `;
     }
 
-    function guardarObligacion(e) {
-      e.preventDefault();
-      cargarDatos(false, {
-        accion: "nueva_obligacion",
-        fecha_vencimiento: document.getElementById("obl-fecha").value,
-        tipo: document.getElementById("obl-tipo").value,
-        frecuencia: document.getElementById("obl-frecuencia").value,
-        banco_asignado: document.getElementById("obl-banco").value,
-        concepto: document.getElementById("obl-concepto").value,
-        monto_estimado: document.getElementById("obl-monto").value
-      });
-      document.getElementById("obl-concepto").value = "";
-      document.getElementById("obl-monto").value = "";
-    }
+    gridBancos.innerHTML += `
+      <div class="card">
+        <h3>${nombre}</h3>
+        <div class="monto-grande ${info.actual >= 0 ? 'positivo' : 'negativo'}">${formatoPesos(info.actual)}</div>
+        <div style="font-size:0.85rem; color:var(--gris); margin-top:8px; border-top:1px solid #f1f5f9; padding-top:8px;">
+          <div>+ A cobrar: <strong class="positivo">${formatoPesos(info.pendienteCobrar)}</strong></div>
+          <div>- A pagar: <strong class="negativo">${formatoPesos(info.pendientePagar)}</strong></div>
+          <div style="margin-top:4px; font-weight:600; color:var(--texto);">
+            Proyectado: <span class="${proyectadoBanco >= 0 ? 'positivo' : 'negativo'}">${formatoPesos(proyectadoBanco)}</span>
+          </div>
+          ${info.limite > 0 ? `<div style="font-size:0.8rem;">Con acuerdo (${formatoPesos(info.limite)}): ${formatoPesos(disponibleConAcuerdo)}</div>` : ''}
+        </div>
+      </div>
+    `;
+  });
 
-    async function marcarPagado(id, tipo, banco, concepto, monto, frecuencia) {
-      if (!confirm(`¿Confirmás registrar "${concepto}" por ${formatoPesos(monto)} en ${banco} y descontarlo/acreditarlo en tus movimientos de hoy?`)) return;
-      
-      const hoyStr = new Date().toISOString().split("T")[0];
-      await cargarDatos(false, { accion: "pagar_obligacion", id: id });
-      await cargarDatos(false, {
-        accion: "nuevo_movimiento",
-        fecha: hoyStr,
-        tipo_movimiento: tipo === "Ingreso Esperado" ? "Entrada" : "Salida",
-        subtipo: frecuencia === "Mensual" ? "Regular" : "Extraordinario",
-        banco: banco,
-        categoria: "Vencimiento Agendado",
-        descripcion: concepto,
-        monto: monto
-      });
-    }
+  document.getElementById("contenedor-alertas").innerHTML = htmlAlertas || `<div class="alerta alerta-verde">✅ Todas tus cuentas tienen liquidez suficiente para cubrir las obligaciones agendadas.</div>`;
+  document.getElementById("total-actual").innerText = formatoPesos(totalLiquidezActual);
+  document.getElementById("total-ingresos-futuros").innerText = formatoPesos(totalIngresosFuturos);
+  document.getElementById("total-egresos-futuros").innerText = formatoPesos(totalEgresosFuturos);
+  
+  const netoFinal = totalLiquidezActual + totalIngresosFuturos - totalEgresosFuturos;
+  const elProy = document.getElementById("total-proyectado");
+  elProy.innerText = formatoPesos(netoFinal);
+  elProy.className = "monto-grande " + (netoFinal >= 0 ? "positivo" : "negativo");
 
-    function guardarBanco(e) {
-      e.preventDefault();
-      cargarDatos(false, {
-        accion: "guardar_banco",
-        entidad: document.getElementById("bco-nombre").value.trim(),
-        tipo: document.getElementById("bco-tipo").value,
-        saldo_inicial: document.getElementById("bco-saldo").value,
-        limite_descubierto: document.getElementById("bco-limite").value
-      });
-      document.getElementById("bco-nombre").value = "";
-    }
-  </script>
+  renderizarMovimientos();
+}
+
+function renderizarMovimientos() {
+  const filtroBanco = document.getElementById("filtro-banco").value;
+  const filtroTipo = document.getElementById("filtro-tipo").value;
+  const tbody = document.getElementById("tabla-movimientos");
+  tbody.innerHTML = "";
+
+  let movs = [...DATOS.movimientos].sort((a, b) => new Date(a.Fecha) - new Date(b.Fecha));
+  
+  let saldoAcumulado = 0;
+  if (filtroBanco === "TODOS") {
+    DATOS.bancos.forEach(b => saldoAcumulado += (Number(b.Saldo_Inicial) || 0));
+  } else {
+    const bco = DATOS.bancos.find(b => b.Entidad === filtroBanco);
+    if (bco) saldoAcumulado = Number(bco.Saldo_Inicial) || 0;
+  }
+
+  const filasCalculadas = [];
+  movs.forEach(m => {
+    if (filtroBanco !== "TODOS" && m.Banco !== filtroBanco) return;
+    const monto = Number(m.Monto) || 0;
+    if (m.Tipo_Movimiento === "Entrada") saldoAcumulado += monto;
+    else saldoAcumulado -= monto;
+
+    if (filtroTipo !== "TODOS" && m.Tipo_Movimiento !== filtroTipo) return;
+
+    filasCalculadas.push({ ...m, saldoResultante: saldoAcumulado });
+  });
+
+  filasCalculadas.reverse().forEach(m => {
+    const fechaStr = m.Fecha ? m.Fecha.toString().split("T")[0] : "";
+    const esEntrada = m.Tipo_Movimiento === "Entrada";
+    const monto = Number(m.Monto) || 0;
+
+    tbody.innerHTML += `
+      <tr>
+        <td><strong>${fechaStr}</strong></td>
+        <td>${m.Banco}</td>
+        <td>
+          <span class="badge ${esEntrada ? 'badge-in' : 'badge-out'}">${m.Tipo_Movimiento}</span>
+          ${m.Subtipo === 'Extraordinario' ? '<span class="badge badge-extra">Extra</span>' : ''}
+        </td>
+        <td><strong>${m.Categoria}</strong><br><small style="color:var(--gris);">${m.Descripcion}</small></td>
+        <td style="text-align:right;" class="positivo">${esEntrada ? formatoPesos(monto) : '—'}</td>
+        <td style="text-align:right;" class="negativo">${!esEntrada ? formatoPesos(monto) : '—'}</td>
+        <td style="text-align:right; font-weight:700;">${formatoPesos(m.saldoResultante)}</td>
+      </tr>
+    `;
+  });
+}
+
+function guardarMovimiento(e) {
+  e.preventDefault();
+  cargarDatos(false, {
+    accion: "nuevo_movimiento",
+    fecha: document.getElementById("mov-fecha").value,
+    tipo_movimiento: document.getElementById("mov-tipo").value,
+    subtipo: document.getElementById("mov-subtipo").value,
+    banco: document.getElementById("mov-banco").value,
+    categoria: document.getElementById("mov-categoria").value,
+    descripcion: document.getElementById("mov-desc").value,
+    monto: document.getElementById("mov-monto").value
+  });
+  document.getElementById("mov-desc").value = "";
+  document.getElementById("mov-monto").value = "";
+}
+
+function guardarObligacion(e) {
+  e.preventDefault();
+  cargarDatos(false, {
+    accion: "nueva_obligacion",
+    fecha_vencimiento: document.getElementById("obl-fecha").value,
+    tipo: document.getElementById("obl-tipo").value,
+    frecuencia: document.getElementById("obl-frecuencia").value,
+    banco_asignado: document.getElementById("obl-banco").value,
+    concepto: document.getElementById("obl-concepto").value,
+    monto_estimado: document.getElementById("obl-monto").value
+  });
+  document.getElementById("obl-concepto").value = "";
+  document.getElementById("obl-monto").value = "";
+}
+
+async function marcarPagado(id, tipo, banco, concepto, monto, frecuencia) {
+  if (!confirm(`¿Confirmás registrar "${concepto}" por ${formatoPesos(monto)} en ${banco} y descontarlo/acreditarlo en tus movimientos de hoy?`)) return;
+  
+  const hoyStr = new Date().toISOString().split("T")[0];
+  await cargarDatos(false, { accion: "pagar_obligacion", id: id });
+  await cargarDatos(false, {
+    accion: "nuevo_movimiento",
+    fecha: hoyStr,
+    tipo_movimiento: tipo === "Ingreso Esperado" ? "Entrada" : "Salida",
+    subtipo: frecuencia === "Mensual" ? "Regular" : "Extraordinario",
+    banco: banco,
+    categoria: "Vencimiento Agendado",
+    descripcion: concepto,
+    monto: monto
+  });
+}
+
+function guardarBanco(e) {
+  e.preventDefault();
+  cargarDatos(false, {
+    accion: "guardar_banco",
+    entidad: document.getElementById("bco-nombre").value.trim(),
+    tipo: document.getElementById("bco-tipo").value,
+    saldo_inicial: document.getElementById("bco-saldo").value,
+    limite_descubierto: document.getElementById("bco-limite").value
+  });
+  document.getElementById("bco-nombre").value = "";
+}
+</script>
 </body>
 </html>
