@@ -122,7 +122,7 @@
       <h2 style="margin-top:0;">Control Financiero</h2>
       <p style="color:var(--gris); font-size:0.9rem;">Ingresá tu PIN de seguridad para sincronizar con la nube</p>
       <input type="password" id="pin-input" placeholder="••••" maxlength="8" inputmode="numeric">
-      <button class="btn-primary" style="width:100%;" onclick="iniciarSesion()">Ingresar</button>
+      <button type="button" class="btn-primary" style="width:100%;" onclick="iniciarSesion()">Ingresar</button>
       <p id="login-error" style="color:var(--rojo); font-size:0.85rem; margin-top:10px;"></p>
     </div>
   </div>
@@ -130,16 +130,16 @@
   <header>
     <h1>📊 Gestión Financiera y Liquidez</h1>
     <div>
-      <button class="btn-sync" onclick="cargarDatos()">🔄 Sincronizar</button>
-      <button class="btn-sync" onclick="cerrarSesion()" style="margin-left:5px;">🔒 Salir</button>
+      <button type="button" class="btn-sync" onclick="cargarDatos()">🔄 Sincronizar</button>
+      <button type="button" class="btn-sync" onclick="cerrarSesion()" style="margin-left:5px;">🔒 Salir</button>
     </div>
   </header>
 
   <nav>
-    <button class="active" onclick="cambiarTab('resumen', this)">Resumen y Liquidez</button>
-    <button onclick="cambiarTab('movimientos', this)">Movimientos por Fecha</button>
-    <button onclick="cambiarTab('obligaciones', this)">Vencimientos y Proyección</button>
-    <button onclick="cambiarTab('bancos', this)">Configurar Bancos</button>
+    <button type="button" class="active" onclick="cambiarTab('resumen', this)">Resumen y Liquidez</button>
+    <button type="button" onclick="cambiarTab('movimientos', this)">Movimientos por Fecha</button>
+    <button type="button" onclick="cambiarTab('obligaciones', this)">Vencimientos y Proyección</button>
+    <button type="button" onclick="cambiarTab('bancos', this)">Configurar Bancos</button>
   </nav>
 
   <div id="loader">Sincronizando con Google Drive...</div>
@@ -517,7 +517,7 @@
               htmlAlertas += `<div class="alerta alerta-roja"><span>⚠️ <strong>VENCIDO:</strong> ${o.Concepto} (${o.Banco_Asignado}) por <strong>${formatoPesos(monto)}</strong></span><span>Venció el ${fechaStr}</span></div>`;
             } else if (diffDias <= 5) {
               badgeEstado = `<span class="badge badge-out">Vence en ${diffDias} d</span>`;
-              htmlAlertas += `<div class="alerta alerta-amarilla"><span>⏰ <strong>PRÓXIMO VENCIMIENTO:</strong> ${o.Concepto} (${o.Banco_Asignado}) por <strong>${formatoPesos(monto)}</strong></span><span>Vence el${fechaStr}</span></div>`;
+              htmlAlertas += `<div class="alerta alerta-amarilla"><span>⏰ <strong>PRÓXIMO VENCIMIENTO:</strong> ${o.Concepto} (${o.Banco_Asignado}) por <strong>${formatoPesos(monto)}</strong></span><span>Vence el ${fechaStr}</span></div>`;
             } else {
               badgeEstado = `<span class="badge">En ${diffDias} días</span>`;
             }
@@ -533,7 +533,7 @@
             <td>${o.Concepto}</td>
             <td style="text-align:right; font-weight:600;" class="${o.Tipo === 'Ingreso Esperado' ? 'positivo' : 'negativo'}">${formatoPesos(monto)}</td>
             <td>
-              ${pendiente ? `<button class="btn-small" style="background:var(--secundario); color:white;" onclick="marcarPagado('${o.ID}', '${o.Tipo}', '${o.Banco_Asignado}', '${o.Concepto}', ${monto}, '${o.Frecuencia}')">✔ Registrar</button>` : '—'}
+              ${pendiente ? `<button type="button" class="btn-small" style="background:var(--secundario); color:white;" onclick="marcarPagado('${o.ID}', '${o.Tipo}', '${o.Banco_Asignado}', '${o.Concepto}', ${monto}, '${o.Frecuencia}')">✔ Registrar</button>` : '—'}
             </td>
           </tr>
         `;
@@ -569,3 +569,133 @@
                 Proyectado: <span class="${proyectadoBanco >= 0 ? 'positivo' : 'negativo'}">${formatoPesos(proyectadoBanco)}</span>
               </div>
               ${info.limite > 0 ? `<div style="font-size:0.8rem;">Con acuerdo (${formatoPesos(info.limite)}): ${formatoPesos(disponibleConAcuerdo)}</div>` : ''}
+            </div>
+          </div>
+        `;
+      });
+
+      document.getElementById("contenedor-alertas").innerHTML = htmlAlertas || `<div class="alerta alerta-verde">✅ Todas tus cuentas tienen liquidez suficiente para cubrir las obligaciones agendadas.</div>`;
+      document.getElementById("total-actual").innerText = formatoPesos(totalLiquidezActual);
+      document.getElementById("total-ingresos-futuros").innerText = formatoPesos(totalIngresosFuturos);
+      document.getElementById("total-egresos-futuros").innerText = formatoPesos(totalEgresosFuturos);
+      
+      const netoFinal = totalLiquidezActual + totalIngresosFuturos - totalEgresosFuturos;
+      const elProy = document.getElementById("total-proyectado");
+      elProy.innerText = formatoPesos(netoFinal);
+      elProy.className = "monto-grande " + (netoFinal >= 0 ? "positivo" : "negativo");
+
+      renderizarMovimientos();
+    }
+
+    function renderizarMovimientos() {
+      const filtroBanco = document.getElementById("filtro-banco").value;
+      const filtroTipo = document.getElementById("filtro-tipo").value;
+      const tbody = document.getElementById("tabla-movimientos");
+      tbody.innerHTML = "";
+
+      let movs = [...DATOS.movimientos].sort((a, b) => new Date(a.Fecha) - new Date(b.Fecha));
+      
+      let saldoAcumulado = 0;
+      if (filtroBanco === "TODOS") {
+        DATOS.bancos.forEach(b => saldoAcumulado += (Number(b.Saldo_Inicial) || 0));
+      } else {
+        const bco = DATOS.bancos.find(b => b.Entidad === filtroBanco);
+        if (bco) saldoAcumulado = Number(bco.Saldo_Inicial) || 0;
+      }
+
+      const filasCalculadas = [];
+      movs.forEach(m => {
+        if (filtroBanco !== "TODOS" && m.Banco !== filtroBanco) return;
+        const monto = Number(m.Monto) || 0;
+        if (m.Tipo_Movimiento === "Entrada") saldoAcumulado += monto;
+        else saldoAcumulado -= monto;
+
+        if (filtroTipo !== "TODOS" && m.Tipo_Movimiento !== filtroTipo) return;
+
+        filasCalculadas.push({ ...m, saldoResultante: saldoAcumulado });
+      });
+
+      filasCalculadas.reverse().forEach(m => {
+        const fechaStr = m.Fecha ? m.Fecha.toString().split("T")[0] : "";
+        const esEntrada = m.Tipo_Movimiento === "Entrada";
+        const monto = Number(m.Monto) || 0;
+
+        tbody.innerHTML += `
+          <tr>
+            <td><strong>${fechaStr}</strong></td>
+            <td>${m.Banco}</td>
+            <td>
+              <span class="badge ${esEntrada ? 'badge-in' : 'badge-out'}">${m.Tipo_Movimiento}</span>
+              ${m.Subtipo === 'Extraordinario' ? '<span class="badge badge-extra">Extra</span>' : ''}
+            </td>
+            <td><strong>${m.Categoria}</strong><br><small style="color:var(--gris);">${m.Descripcion}</small></td>
+            <td style="text-align:right;" class="positivo">${esEntrada ? formatoPesos(monto) : '—'}</td>
+            <td style="text-align:right;" class="negativo">${!esEntrada ? formatoPesos(monto) : '—'}</td>
+            <td style="text-align:right; font-weight:700;">${formatoPesos(m.saldoResultante)}</td>
+          </tr>
+        `;
+      });
+    }
+
+    function guardarMovimiento(e) {
+      e.preventDefault();
+      cargarDatos(false, {
+        accion: "nuevo_movimiento",
+        fecha: document.getElementById("mov-fecha").value,
+        tipo_movimiento: document.getElementById("mov-tipo").value,
+        subtipo: document.getElementById("mov-subtipo").value,
+        banco: document.getElementById("mov-banco").value,
+        categoria: document.getElementById("mov-categoria").value,
+        descripcion: document.getElementById("mov-desc").value,
+        monto: document.getElementById("mov-monto").value
+      });
+      document.getElementById("mov-desc").value = "";
+      document.getElementById("mov-monto").value = "";
+    }
+
+    function guardarObligacion(e) {
+      e.preventDefault();
+      cargarDatos(false, {
+        accion: "nueva_obligacion",
+        fecha_vencimiento: document.getElementById("obl-fecha").value,
+        tipo: document.getElementById("obl-tipo").value,
+        frecuencia: document.getElementById("obl-frecuencia").value,
+        banco_asignado: document.getElementById("obl-banco").value,
+        concepto: document.getElementById("obl-concepto").value,
+        monto_estimado: document.getElementById("obl-monto").value
+      });
+      document.getElementById("obl-concepto").value = "";
+      document.getElementById("obl-monto").value = "";
+    }
+
+    async function marcarPagado(id, tipo, banco, concepto, monto, frecuencia) {
+      if (!confirm(`¿Confirmás registrar "${concepto}" por ${formatoPesos(monto)} en ${banco} y descontarlo/acreditarlo en tus movimientos de hoy?`)) return;
+      
+      const hoyStr = new Date().toISOString().split("T")[0];
+      await cargarDatos(false, { accion: "pagar_obligacion", id: id });
+      await cargarDatos(false, {
+        accion: "nuevo_movimiento",
+        fecha: hoyStr,
+        tipo_movimiento: tipo === "Ingreso Esperado" ? "Entrada" : "Salida",
+        subtipo: frecuencia === "Mensual" ? "Regular" : "Extraordinario",
+        banco: banco,
+        categoria: "Vencimiento Agendado",
+        descripcion: concepto,
+        monto: monto
+      });
+    }
+
+    function guardarBanco(e) {
+      e.preventDefault();
+      cargarDatos(false, {
+        accion: "guardar_banco",
+        entidad: document.getElementById("bco-nombre").value.trim(),
+        tipo: document.getElementById("bco-tipo").value,
+        saldo_inicial: document.getElementById("bco-saldo").value,
+        limite_descubierto: document.getElementById("bco-limite").value
+      });
+      document.getElementById("bco-nombre").value = "";
+    }
+  </script>
+</body>
+</html>
