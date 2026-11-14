@@ -3,699 +3,973 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control Financiero y Liquidez</title>
+  <title>Control Financiero y Liquidez v2.0</title>
   <style>
     :root {
-      --primario: #1e3a8a;
-      --secundario: #2563eb;
-      --fondo: #f1f5f9;
-      --tarjeta: #ffffff;
-      --texto: #1e293b;
-      --gris: #64748b;
-      --verde: #15803d;
-      --verde-bg: #dcfce7;
-      --rojo: #b91c1c;
-      --rojo-bg: #fee2e2;
-      --amarillo: #a16207;
-      --amarillo-bg: #fef9c3;
-      --borde: #cbd5e1;
+      --primary: #1e3a8a;
+      --primary-light: #3b82f6;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warning: #d97706;
     }
-    * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-    body { margin: 0; background: var(--fondo); color: var(--texto); padding-bottom: 40px; }
-    
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding-bottom: 50px; }
+
+    /* Login */
     #login-screen {
-      position: fixed; inset: 0; background: var(--primario); color: white;
-      display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; padding: 20px;
+      position: fixed; inset: 0; background: var(--primary);
+      display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px;
     }
-    #login-box {
-      background: white; color: var(--texto); padding: 30px; border-radius: 12px;
-      width: 100%; max-width: 360px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    .login-box {
+      background: white; padding: 30px; border-radius: 16px; width: 100%; max-width: 380px;
+      text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.3);
     }
-    #login-box input {
-      width: 100%; padding: 12px; font-size: 20px; text-align: center; letter-spacing: 6px;
-      border: 2px solid var(--borde); border-radius: 8px; margin: 15px 0;
+    .login-box h2 { margin-bottom: 8px; color: var(--primary); }
+    .login-box p { font-size: 0.9rem; color: var(--muted); margin-bottom: 18px; }
+    .login-box input {
+      width: 100%; padding: 12px; font-size: 1.3rem; text-align: center; letter-spacing: 6px;
+      border: 2px solid var(--border); border-radius: 10px; margin-bottom: 14px;
     }
 
+    /* Header */
     header {
-      background: var(--primario); color: white; padding: 16px 20px;
-      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
+      background: var(--primary); color: white; padding: 16px 20px;
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
     }
-    header h1 { margin: 0; font-size: 1.25rem; }
-    .btn-sync {
-      background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3);
-      padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600;
+    header h1 { font-size: 1.2rem; font-weight: 700; }
+    .sync-badge {
+      font-size: 0.78rem; background: rgba(255,255,255,0.18); padding: 5px 12px;
+      border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;
     }
-    .btn-sync:hover { background: rgba(255,255,255,0.25); }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; }
+    .dot.syncing { background: #facc15; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-    nav {
-      display: flex; background: white; border-bottom: 1px solid var(--borde);
-      overflow-x: auto; position: sticky; top: 0; z-index: 100;
-    }
-    nav button {
-      flex: 1; padding: 14px 12px; border: none; background: none; font-weight: 600;
-      color: var(--gris); cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap;
-    }
-    nav button.active { color: var(--secundario); border-bottom-color: var(--secundario); background: #eff6ff; }
+    .container { max-width: 1200px; margin: 18px auto; padding: 0 14px; }
 
-    .container { max-width: 1100px; margin: 20px auto; padding: 0 15px; }
+    /* Tabs */
+    .tabs { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+    .tab-btn {
+      padding: 10px 15px; border: 1px solid var(--border); background: white; border-radius: 10px;
+      cursor: pointer; font-weight: 600; color: var(--muted); font-size: 0.9rem; transition: 0.2s;
+    }
+    .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
     .section { display: none; }
     .section.active { display: block; }
 
-    .grid-cards {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 20px;
-    }
+    /* Cards & Grids */
+    .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 14px; margin-bottom: 18px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 16px; margin-bottom: 18px; }
     .card {
-      background: var(--tarjeta); border-radius: 10px; padding: 18px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #e2e8f0;
+      background: var(--card); border-radius: 14px; padding: 18px;
+      box-shadow: 0 2px 8px rgba(15,23,42,0.05); border: 1px solid var(--border);
     }
-    .card h3 { margin: 0 0 8px 0; font-size: 0.9rem; color: var(--gris); text-transform: uppercase; }
-    .monto-grande { font-size: 1.6rem; font-weight: 700; margin: 5px 0; }
-    .positivo { color: var(--verde); }
-    .negativo { color: var(--rojo); }
+    .card h3 { font-size: 1rem; margin-bottom: 12px; color: var(--primary); }
+    .bank-card { border-left: 5px solid var(--primary-light); }
+    .bank-card.credit { border-left-color: #7c3aed; }
+    .bank-card.warning { border-left-color: var(--warning); }
+    .bank-card.danger { border-left-color: var(--danger); }
+    .amount { font-size: 1.55rem; font-weight: 800; margin: 6px 0; }
+    .subtext { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
 
-    .alerta {
-      padding: 12px 15px; border-radius: 8px; margin-bottom: 12px; border-left: 5px solid;
-      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
+    /* Alerts */
+    .alert {
+      padding: 13px 16px; border-radius: 10px; margin-bottom: 14px; font-weight: 600;
+      display: flex; align-items: center; gap: 10px; font-size: 0.92rem;
     }
-    .alerta-roja { background: var(--rojo-bg); border-color: var(--rojo); color: #7f1d1d; }
-    .alerta-amarilla { background: var(--amarillo-bg); border-color: var(--amarillo); color: #713f12; }
-    .alerta-verde { background: var(--verde-bg); border-color: var(--verde); color: #14532d; }
+    .alert-danger { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .alert-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
 
-    .form-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 15px;
-    }
-    label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; color: var(--texto); }
+    /* Forms */
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 12px; margin-bottom: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
     input, select {
-      width: 100%; padding: 10px; border: 1px solid var(--borde); border-radius: 6px; font-size: 0.95rem;
+      padding: 9px 11px; border: 1px solid #cbd5e1; border-radius: 8px;
+      font-size: 0.92rem; background: white; width: 100%;
     }
-    .btn-primary {
-      background: var(--secundario); color: white; border: none; padding: 12px 20px;
-      border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 1rem;
+    button.btn-primary {
+      background: var(--primary); color: white; border: none; padding: 10px 18px;
+      border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.92rem;
     }
-    .btn-primary:hover { background: var(--primario); }
-    .btn-small {
-      padding: 6px 10px; font-size: 0.8rem; border-radius: 5px; border: none; cursor: pointer; font-weight: 600;
+    button.btn-secondary {
+      background: #e2e8f0; color: var(--text); border: none; padding: 10px 16px;
+      border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.88rem;
     }
+    button.btn-sm { padding: 5px 10px; font-size: 0.78rem; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; }
+    .btn-pay { background: var(--success); color: white; }
+    .btn-del { background: #fee2e2; color: var(--danger); }
 
-    .table-responsive { overflow-x: auto; background: white; border-radius: 10px; border: 1px solid #e2e8f0; }
-    table { width: 100%; border-collapse: collapse; min-width: 650px; }
-    th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 0.92rem; }
-    th { background: #f8fafc; font-weight: 600; color: var(--gris); }
-    .badge {
-      padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; display: inline-block;
-    }
-    .badge-in { background: var(--verde-bg); color: var(--verde); }
-    .badge-out { background: var(--rojo-bg); color: var(--rojo); }
-    .badge-extra { background: #e0e7ff; color: #3730a3; }
+    /* Tables */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.88rem; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); }
+    th { background: #f8fafc; color: var(--muted); font-weight: 700; font-size: 0.76rem; text-transform: uppercase; }
+    .badge { padding: 3px 8px; border-radius: 6px; font-size: 0.74rem; font-weight: 700; display: inline-block; }
+    .bg-in { background: #dcfce7; color: #166534; }
+    .bg-out { background: #fee2e2; color: #991b1b; }
+    .bg-tr { background: #e0e7ff; color: #3730a3; }
+    .bg-pend { background: #fef3c7; color: #92400e; }
 
-    #loader {
-      display: none; position: fixed; bottom: 20px; right: 20px; background: var(--primario);
-      color: white; padding: 10px 18px; border-radius: 30px; font-weight: 600; z-index: 999;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    /* Chart */
+    .chart-box { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 20px; }
+    .legend-list { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 8px; }
+    .legend-item { display: flex; justify-content: space-between; align-items: center; font-size: 0.86rem; padding: 6px 8px; border-radius: 8px; background: #f8fafc; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; margin-right: 8px; }
+
+    /* Tree 3 Niveles */
+    .tree-rubro { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
+    .tree-rubro-hdr {
+      background: #f8fafc; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;
+      cursor: pointer; font-weight: 700; color: var(--primary);
     }
+    .tree-rubro-body { padding: 10px 14px; border-top: 1px solid var(--border); }
+    .tree-subgrupo { margin-bottom: 10px; padding-left: 10px; border-left: 3px solid var(--primary-light); }
+    .tree-sub-hdr { font-weight: 700; font-size: 0.92rem; margin-bottom: 6px; display: flex; justify-content: space-between; cursor: pointer; }
+    .tree-detalle {
+      display: flex; justify-content: space-between; align-items: center; padding: 6px 10px;
+      margin: 4px 0 4px 12px; background: #f8fafc; border-radius: 6px; font-size: 0.86rem;
+    }
+    .prog-bar { height: 6px; background: #e2e8f0; border-radius: 4px; overflow: hidden; width: 110px; display: inline-block; vertical-align: middle; margin-left: 8px; }
+    .prog-fill { height: 100%; background: var(--success); }
+    .prog-fill.warn { background: var(--warning); }
+    .prog-fill.over { background: var(--danger); }
   </style>
 </head>
 <body>
 
-  <div id="login-screen">
-    <div id="login-box">
-      <h2 style="margin-top:0;">Control Financiero</h2>
-      <p style="color:var(--gris); font-size:0.9rem;">Ingresá tu PIN de seguridad para sincronizar con la nube</p>
-      <input type="password" id="pin-input" placeholder="••••" maxlength="8" inputmode="numeric">
-      <button type="button" class="btn-primary" style="width:100%;" onclick="iniciarSesion()">Ingresar</button>
-      <p id="login-error" style="color:var(--rojo); font-size:0.85rem; margin-top:10px;"></p>
+<div id="login-screen">
+  <div class="login-box">
+    <h2>Control Financiero</h2>
+    <p>Ingresá tu PIN para sincronizar con Google Sheets</p>
+    <input type="password" id="pin-input" maxlength="8" placeholder="••••" onkeyup="if(event.key==='Enter') iniciarSesion()">
+    <button class="btn-primary" style="width:100%" onclick="iniciarSesion()">Ingresar</button>
+  </div>
+</div>
+
+<header>
+  <div>
+    <h1>Control Financiero y Liquidez</h1>
+    <div style="font-size:0.8rem; opacity:0.85;">Rubros en 3 Niveles • Tarjetas y Cheques • Google Sheets</div>
+  </div>
+  <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+    <div class="sync-badge"><span class="dot" id="sync-dot"></span> <span id="sync-text">Listo</span></div>
+    <button class="btn-secondary" style="padding:6px 12px; font-size:0.82rem;" onclick="cargarDatos(false)">Actualizar Nube</button>
+    <button class="btn-secondary" style="padding:6px 12px; font-size:0.82rem;" onclick="cerrarSesion()">Salir</button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="cambiarTab('resumen', this)">1. Resumen y Gráfico</button>
+    <button class="tab-btn" onclick="cambiarTab('movimientos', this)">2. Movimientos y Cuotas</button>
+    <button class="tab-btn" onclick="cambiarTab('rubros', this)">3. Cuentas de Gastos (3 Niveles)</button>
+    <button class="tab-btn" onclick="cambiarTab('obligaciones', this)">4. Vencimientos y Cheques</button>
+    <button class="tab-btn" onclick="cambiarTab('bancos', this)">5. Bancos y Tarjetas</button>
+  </div>
+
+  <!-- TAB 1: RESUMEN -->
+  <div id="tab-resumen" class="section active">
+    <div id="alerta-liquidez"></div>
+
+    <div class="card" style="margin-bottom:16px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between;">
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <label style="margin:0;">Mes a analizar:</label>
+        <input type="month" id="filtro-mes" style="width:auto;" onchange="renderizarTodo()">
+      </div>
+      <div class="subtext" id="resumen-mes-totales"></div>
+    </div>
+
+    <div class="grid-cards" id="tarjetas-bancos"></div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>Distribución de Gastos del Mes (Gráfico de Torta)</h3>
+        <div class="chart-box">
+          <canvas id="pie-chart" width="230" height="230"></canvas>
+          <div class="legend-list" id="pie-legend"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Próximos Vencimientos y Cheques Emitidos</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fecha</th><th>Cuenta</th><th>Concepto</th><th>Monto</th><th>Acción</th></tr></thead>
+            <tbody id="tabla-proximos"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 
-  <header>
-    <h1>📊 Gestión Financiera y Liquidez</h1>
-    <div>
-      <button type="button" class="btn-sync" onclick="cargarDatos()">🔄 Sincronizar</button>
-      <button type="button" class="btn-sync" onclick="cerrarSesion()" style="margin-left:5px;">🔒 Salir</button>
-    </div>
-  </header>
-
-  <nav>
-    <button type="button" class="active" onclick="cambiarTab('resumen', this)">Resumen y Liquidez</button>
-    <button type="button" onclick="cambiarTab('movimientos', this)">Movimientos por Fecha</button>
-    <button type="button" onclick="cambiarTab('obligaciones', this)">Vencimientos y Proyección</button>
-    <button type="button" onclick="cambiarTab('bancos', this)">Configurar Bancos</button>
-  </nav>
-
-  <div id="loader">Sincronizando con Google Drive...</div>
-
-  <div class="container">
-    
-    <div id="resumen" class="section active">
-      <div id="contenedor-alertas"></div>
-
-      <div class="grid-cards">
-        <div class="card">
-          <h3>Liquidez Total Actual</h3>
-          <div id="total-actual" class="monto-grande">$ 0,00</div>
-          <small style="color:var(--gris);">Suma de todos los bancos y efectivo</small>
+  <!-- TAB 2: MOVIMIENTOS Y CUOTAS -->
+  <div id="tab-movimientos" class="section">
+    <div class="card" style="margin-bottom:16px;">
+      <h3>Registrar Movimiento o Compra en Cuotas</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" id="mov-fecha">
         </div>
-        <div class="card">
-          <h3>Ingresos Futuros Esperados</h3>
-          <div id="total-ingresos-futuros" class="monto-grande positivo">$ 0,00</div>
-          <small style="color:var(--gris);">Pendientes de cobro cargados</small>
-        </div>
-        <div class="card">
-          <h3>Obligaciones a Vencer</h3>
-          <div id="total-egresos-futuros" class="monto-grande negativo">$ 0,00</div>
-          <small style="color:var(--gris);">Compromisos pendientes de pago</small>
-        </div>
-        <div class="card">
-          <h3>Saldo Proyectado Neto</h3>
-          <div id="total-proyectado" class="monto-grande">$ 0,00</div>
-          <small style="color:var(--gris);">Liquidez final tras cubrir vencimientos</small>
-        </div>
-      </div>
-
-      <h2 style="font-size:1.1rem; margin-bottom:12px;">Estado de Liquidez por Banco / Cuenta</h2>
-      <div id="grid-bancos" class="grid-cards"></div>
-    </div>
-
-    <div id="movimientos" class="section">
-      <div class="card" style="margin-bottom:20px;">
-        <h3 style="margin-bottom:15px;">Registrar Nuevo Movimiento</h3>
-        <form onsubmit="guardarMovimiento(event)">
-          <div class="form-grid">
-            <div>
-              <label>Fecha</label>
-              <input type="date" id="mov-fecha" required>
-            </div>
-            <div>
-              <label>Tipo</label>
-              <select id="mov-tipo" required>
-                <option value="Salida">Salida (Gasto / Pago)</option>
-                <option value="Entrada">Entrada (Ingreso)</option>
-              </select>
-            </div>
-            <div>
-              <label>Clasificación</label>
-              <select id="mov-subtipo" required>
-                <option value="Regular">Regular / Habitual</option>
-                <option value="Extraordinario">Extraordinario / Eventual</option>
-              </select>
-            </div>
-            <div>
-              <label>Banco / Cuenta</label>
-              <select id="mov-banco" required></select>
-            </div>
-            <div>
-              <label>Categoría</label>
-              <input type="text" id="mov-categoria" placeholder="Ej: Servicios, Jubilación, Taller..." required>
-            </div>
-            <div>
-              <label>Descripción</label>
-              <input type="text" id="mov-desc" placeholder="Detalle del movimiento" required>
-            </div>
-            <div>
-              <label>Monto (ARS)</label>
-              <input type="number" id="mov-monto" step="0.01" min="0.01" placeholder="0.00" required>
-            </div>
-          </div>
-          <button type="submit" class="btn-primary">Guardar Movimiento en la Nube</button>
-        </form>
-      </div>
-
-      <div class="card" style="margin-bottom:15px; display:flex; gap:15px; flex-wrap:wrap; align-items:end;">
-        <div>
-          <label>Filtrar por Banco</label>
-          <select id="filtro-banco" onchange="renderizarMovimientos()">
-            <option value="TODOS">Todos los bancos</option>
+        <div class="form-group">
+          <label>Tipo de Movimiento</label>
+          <select id="mov-tipo" onchange="toggleTransferencia()">
+            <option value="Salida">Salida / Gasto</option>
+            <option value="Entrada">Entrada / Ingreso</option>
+            <option value="Transferencia">Transferencia / Pago Resumen Tarjeta</option>
           </select>
         </div>
-        <div>
-          <label>Filtrar por Tipo</label>
-          <select id="filtro-tipo" onchange="renderizarMovimientos()">
-            <option value="TODOS">Entradas y Salidas</option>
-            <option value="Entrada">Solo Entradas</option>
-            <option value="Salida">Solo Salidas</option>
+        <div class="form-group" id="grp-banco-origen">
+          <label id="lbl-banco-origen">Cuenta / Tarjeta / Efectivo</label>
+          <select id="mov-banco"></select>
+        </div>
+        <div class="form-group" id="grp-banco-destino" style="display:none;">
+          <label>Cuenta / Tarjeta Destino</label>
+          <select id="mov-banco-destino"></select>
+        </div>
+        <div class="form-group" id="grp-rubro">
+          <label>1. Rubro Principal</label>
+          <select id="mov-rubro" onchange="actualizarSelectSubgrupos()"></select>
+        </div>
+        <div class="form-group" id="grp-subgrupo">
+          <label>2. Subgrupo</label>
+          <select id="mov-subgrupo" onchange="actualizarSelectDetalles()"></select>
+        </div>
+        <div class="form-group" id="grp-detalle">
+          <label>3. Sub-subgrupo / Ítem</label>
+          <select id="mov-detalle"></select>
+        </div>
+        <div class="form-group" id="grp-cuotas">
+          <label>Cuotas (Tarjeta / Financiado)</label>
+          <select id="mov-cuotas">
+            <option value="1">1 pago / Contado / Débito</option>
+            <option value="2">2 cuotas</option>
+            <option value="3">3 cuotas</option>
+            <option value="6">6 cuotas</option>
+            <option value="9">9 cuotas</option>
+            <option value="12">12 cuotas</option>
+            <option value="18">18 cuotas</option>
+            <option value="24">24 cuotas</option>
           </select>
         </div>
+        <div class="form-group">
+          <label>Descripción / Comercio</label>
+          <input type="text" id="mov-desc" placeholder="Ej: Compra regalo cumpleaños">
+        </div>
+        <div class="form-group">
+          <label>Monto Total ($)</label>
+          <input type="number" id="mov-monto" placeholder="0">
+        </div>
       </div>
+      <button class="btn-primary" onclick="guardarMovimiento()">Guardar en Google Sheets</button>
+    </div>
 
-      <div class="table-responsive">
+    <div class="card">
+      <h3>Historial de Movimientos</h3>
+      <div class="form-grid" style="margin-bottom:10px;">
+        <div class="form-group">
+          <label>Filtrar por Cuenta / Tarjeta</label>
+          <select id="filtro-mov-banco" onchange="renderizarMovimientos()"><option value="">Todas las cuentas</option></select>
+        </div>
+        <div class="form-group">
+          <label>Filtrar por Rubro Principal</label>
+          <select id="filtro-mov-rubro" onchange="renderizarMovimientos()"><option value="">Todos los rubros</option></select>
+        </div>
+      </div>
+      <div class="table-wrap">
         <table>
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Banco / Cuenta</th>
-              <th>Tipo</th>
-              <th>Categoría y Detalle</th>
-              <th style="text-align:right;">Entrada</th>
-              <th style="text-align:right;">Salida</th>
-              <th style="text-align:right;">Saldo Acumulado</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Fecha</th><th>Tipo</th><th>Cuenta</th><th>Rubro &gt; Subgrupo &gt; Ítem</th><th>Descripción</th><th>Cuota</th><th>Monto</th><th></th></tr></thead>
           <tbody id="tabla-movimientos"></tbody>
         </table>
       </div>
     </div>
+  </div>
 
-    <div id="obligaciones" class="section">
-      <div class="card" style="margin-bottom:20px;">
-        <h3 style="margin-bottom:15px;">Programar Obligación a Vencer o Ingreso Futuro</h3>
-        <form onsubmit="guardarObligacion(event)">
-          <div class="form-grid">
-            <div>
-              <label>Fecha de Vencimiento / Cobro</label>
-              <input type="date" id="obl-fecha" required>
-            </div>
-            <div>
-              <label>Tipo de Proyección</label>
-              <select id="obl-tipo" required>
-                <option value="Gasto a Pagar">Obligación a Pagar (Salida)</option>
-                <option value="Ingreso Esperado">Ingreso Esperado (Entrada)</option>
-              </select>
-            </div>
-            <div>
-              <label>Frecuencia</label>
-              <select id="obl-frecuencia" required>
-                <option value="Mensual">Regular / Mensual</option>
-                <option value="Único">Extraordinario / Único</option>
-              </select>
-            </div>
-            <div>
-              <label>Banco Asignado</label>
-              <select id="obl-banco" required></select>
-            </div>
-            <div>
-              <label>Concepto</label>
-              <input type="text" id="obl-concepto" placeholder="Ej: Luz, Tarjeta, Jubilación..." required>
-            </div>
-            <div>
-              <label>Monto Estimado (ARS)</label>
-              <input type="number" id="obl-monto" step="0.01" min="0.01" required>
-            </div>
-          </div>
-          <button type="submit" class="btn-primary">Agendar en Proyección</button>
-        </form>
+  <!-- TAB 3: RUBROS 3 NIVELES -->
+  <div id="tab-rubros" class="section">
+    <div class="card" style="margin-bottom:16px;">
+      <h3>Agregar o Editar Cuenta de Gastos (Árbol de 3 Niveles)</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nivel 1: Rubro Principal</label>
+          <input type="text" id="rub-nivel1" list="lista-n1" placeholder="Ej: Gastos Personales">
+          <datalist id="lista-n1"></datalist>
+        </div>
+        <div class="form-group">
+          <label>Nivel 2: Subgrupo</label>
+          <input type="text" id="rub-nivel2" list="lista-n2" placeholder="Ej: Regalos">
+          <datalist id="lista-n2"></datalist>
+        </div>
+        <div class="form-group">
+          <label>Nivel 3: Sub-subgrupo / Detalle</label>
+          <input type="text" id="rub-nivel3" placeholder="Ej: Regalos Gastón">
+        </div>
+        <div class="form-group">
+          <label>Presupuesto Mensual ($)</label>
+          <input type="number" id="rub-presupuesto" value="0">
+        </div>
       </div>
+      <button class="btn-primary" onclick="guardarRubro()">Guardar Rubro en Google Sheets</button>
+    </div>
 
-      <div class="table-responsive">
+    <div class="card">
+      <h3>Estructura Jerárquica y Control de Presupuesto del Mes</h3>
+      <div id="arbol-rubros"></div>
+    </div>
+  </div>
+
+  <!-- TAB 4: VENCIMIENTOS Y CHEQUES -->
+  <div id="tab-obligaciones" class="section">
+    <div class="card" style="margin-bottom:16px;">
+      <h3>Agendar Vencimiento o Cheque Emitido</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Fecha de Vencimiento / Cobro Cheque</label>
+          <input type="date" id="ob-fecha">
+        </div>
+        <div class="form-group">
+          <label>Tipo de Compromiso</label>
+          <select id="ob-tipo">
+            <option value="Cheque Emitido">Cheque Propio Emitido</option>
+            <option value="Resumen Tarjeta">Resumen Tarjeta de Crédito</option>
+            <option value="Servicio / Impuesto">Servicio / Impuesto</option>
+            <option value="Cuota / Préstamo">Cuota / Préstamo</option>
+            <option value="Alquiler / Expensas">Alquiler / Expensas</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Frecuencia</label>
+          <select id="ob-frec">
+            <option value="Único">Único (Cheque / Puntual)</option>
+            <option value="Mensual">Mensual</option>
+            <option value="Bimestral">Bimestral</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Cuenta Bancaria que Paga</label>
+          <select id="ob-banco"></select>
+        </div>
+        <div class="form-group">
+          <label>Concepto / N.º Cheque</label>
+          <input type="text" id="ob-concepto" placeholder="Ej: Cheque #4589 Proveedor">
+        </div>
+        <div class="form-group">
+          <label>Monto ($)</label>
+          <input type="number" id="ob-monto" placeholder="0">
+        </div>
+      </div>
+      <button class="btn-primary" onclick="guardarObligacion()">Agendar en Google Sheets</button>
+    </div>
+
+    <div class="card">
+      <h3>Calendario de Vencimientos y Cheques</h3>
+      <div class="table-wrap">
         <table>
-          <thead>
-            <tr>
-              <th>Vencimiento</th>
-              <th>Estado / Alerta</th>
-              <th>Tipo</th>
-              <th>Banco Asignado</th>
-              <th>Concepto</th>
-              <th style="text-align:right;">Monto</th>
-              <th>Acción</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Vencimiento</th><th>Tipo</th><th>Cuenta</th><th>Concepto</th><th>Monto</th><th>Estado</th><th>Acción</th></tr></thead>
           <tbody id="tabla-obligaciones"></tbody>
         </table>
       </div>
     </div>
-
-    <div id="bancos" class="section">
-      <div class="card" style="margin-bottom:20px;">
-        <h3 style="margin-bottom:15px;">Agregar Banco o Actualizar Saldo Inicial</h3>
-        <form onsubmit="guardarBanco(event)">
-          <div class="form-grid">
-            <div>
-              <label>Nombre de Entidad / Cuenta</label>
-              <input type="text" id="bco-nombre" placeholder="Ej: Banco Credicoop" required>
-            </div>
-            <div>
-              <label>Tipo de Cuenta</label>
-              <select id="bco-tipo">
-                <option value="Cuenta Corriente / Caja Ahorro">Cuenta Bancaria</option>
-                <option value="Billetera Virtual">Billetera Virtual</option>
-                <option value="Caja Física">Efectivo</option>
-              </select>
-            </div>
-            <div>
-              <label>Saldo Inicial Base (ARS)</label>
-              <input type="number" id="bco-saldo" step="0.01" value="0" required>
-            </div>
-            <div>
-              <label>Acuerdo / Límite Descubierto (ARS)</label>
-              <input type="number" id="bco-limite" step="0.01" value="0" required>
-            </div>
-          </div>
-          <button type="submit" class="btn-primary">Guardar Cuenta</button>
-        </form>
-      </div>
-      <p style="color:var(--gris); font-size:0.9rem;">
-        * Nota: Si escribís el nombre exacto de un banco ya existente (por ejemplo <strong>Banco Credicoop</strong>), se actualizará su saldo inicial y límite de descubierto sin duplicarlo.
-      </p>
-    </div>
-
   </div>
 
+  <!-- TAB 5: BANCOS Y TARJETAS -->
+  <div id="tab-bancos" class="section">
+    <div class="card">
+      <h3>Configurar Bancos, Billeteras, Tarjetas de Crédito y Cheques en Cartera</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nombre de Cuenta / Tarjeta</label>
+          <input type="text" id="b-entidad" placeholder="Ej: Banco Credicoop / Tarjeta Visa">
+        </div>
+        <div class="form-group">
+          <label>Tipo de Instrumento</label>
+          <select id="b-tipo">
+            <option value="Cuenta Corriente / Caja Ahorro">Cuenta Bancaria (con Débito)</option>
+            <option value="Billetera Virtual">Billetera Virtual (Mercado Pago)</option>
+            <option value="Caja Física">Efectivo en Mano</option>
+            <option value="Tarjeta de Crédito">Tarjeta de Crédito</option>
+            <option value="Cheques en Cartera">Cheques de Terceros en Cartera</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Saldo Inicial ($)</label>
+          <input type="number" id="b-saldo" value="0">
+        </div>
+        <div class="form-group">
+          <label>Acuerdo / Límite Tarjeta ($)</label>
+          <input type="number" id="b-limite" value="0">
+        </div>
+        <div class="form-group">
+          <label>Notas (Cierre / Vto / CBU)</label>
+          <input type="text" id="b-notas" placeholder="Ej: Cierre día 24, Vto día 5">
+        </div>
+      </div>
+      <button class="btn-primary" onclick="guardarBanco()">Guardar Cuenta / Tarjeta</button>
+
+      <div class="table-wrap" style="margin-top:16px;">
+        <table>
+          <thead><tr><th>Entidad / Tarjeta</th><th>Tipo</th><th>Saldo Inicial</th><th>Límite / Acuerdo</th><th>Notas</th></tr></thead>
+          <tbody id="tabla-bancos-config"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbyEbsrNrFMCtDDvlisuAx0R8VWf1iP7-v5ikR9-w92HPBoobZ9K535UsaTDYhzB15Sj/exec";
+  const API_URL = "https://script.google.com/macros/s/AKfycbyRtXOLHFFy6URb0WRhZFGHnRoBPPrc7JKrhWbnuPCMRxRHoSG_g94y0ahmZAu-hmgx/exec";
+  const COLORES_TORTA = ["#1e3a8a", "#0d9488", "#d97706", "#7c3aed", "#dc2626", "#2563eb", "#059669", "#db2777"];
 
-let PIN_ACTUAL = localStorage.getItem("finanzas_pin") || "";
-let DATOS = { bancos: [], movimientos: [], obligaciones: [] };
+  let PIN_ACTUAL = localStorage.getItem("finanzas_pin") || "";
+  let DATOS = { bancos: [], movimientos: [], obligaciones: [], rubros: [] };
 
-document.getElementById("mov-fecha").valueAsDate = new Date();
-document.getElementById("obl-fecha").valueAsDate = new Date();
+  const hoy = new Date().toISOString().split("T")[0];
+  document.getElementById("mov-fecha").value = hoy;
+  document.getElementById("ob-fecha").value = hoy;
+  document.getElementById("filtro-mes").value = hoy.slice(0, 7);
 
-if (PIN_ACTUAL) {
-  document.getElementById("login-screen").style.display = "none";
-  cargarDatos();
-}
-
-function iniciarSesion() {
-  const pin = document.getElementById("pin-input").value.trim();
-  if (!pin) return;
-  PIN_ACTUAL = pin;
-  cargarDatos(true);
-}
-
-function cerrarSesion() {
-  localStorage.removeItem("finanzas_pin");
-  location.reload();
-}
-
-function cambiarTab(id, btn) {
-  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-  document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-  btn.classList.add("active");
-}
-
-function formatoPesos(valor) {
-  return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(Number(valor) || 0);
-}
-
-function mostrarLoader(estado) {
-  document.getElementById("loader").style.display = estado ? "block" : "none";
-}
-
-function llamarApiJSONP(parametros) {
-  return new Promise((resolve, reject) => {
-    const nombreCallback = "cb_finanzas_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
-    const query = new URLSearchParams({ ...parametros, pin: PIN_ACTUAL, callback: nombreCallback }).toString();
-    const script = document.createElement("script");
-    script.src = `${API_URL}?${query}`;
-
-    const timeout = setTimeout(() => {
-      limpiar();
-      reject(new Error("Tiempo de espera agotado"));
-    }, 15000);
-
-    function limpiar() {
-      clearTimeout(timeout);
-      delete window[nombreCallback];
-      if (script.parentNode) script.parentNode.removeChild(script);
+  if (PIN_ACTUAL) {
+    document.getElementById("pin-input").value = PIN_ACTUAL;
+    const cache = localStorage.getItem("finanzas_cache_v2");
+    if (cache) {
+      DATOS = JSON.parse(cache);
+      document.getElementById("login-screen").style.display = "none";
+      renderizarTodo();
     }
+    cargarDatos(true);
+  }
 
-    window[nombreCallback] = (respuesta) => {
-      limpiar();
-      resolve(respuesta);
-    };
+  function setEstadoSync(texto, sincronizando) {
+    document.getElementById("sync-text").textContent = texto;
+    const dot = document.getElementById("sync-dot");
+    if (sincronizando) dot.classList.add("syncing");
+    else dot.classList.remove("syncing");
+  }
 
-    script.onerror = () => {
-      limpiar();
-      reject(new Error("Error de red al cargar el script"));
-    };
+  function iniciarSesion() {
+    const pin = document.getElementById("pin-input").value.trim();
+    if (!pin) return alert("Ingresá tu PIN");
+    PIN_ACTUAL = pin;
+    cargarDatos(false);
+  }
 
-    document.body.appendChild(script);
-  });
-}
+  function cerrarSesion() {
+    localStorage.removeItem("finanzas_pin");
+    location.reload();
+  }
 
-async function cargarDatos(esLogin = false, paramsExtra = {}) {
-  mostrarLoader(true);
-  try {
-    const json = await llamarApiJSONP({ accion: "leer", ...paramsExtra });
-    
-    if (json.status === "error") {
-      if (esLogin) {
-        document.getElementById("login-error").innerText = "PIN incorrecto. Verificá tu clave.";
+  function llamarAPI(params) {
+    return new Promise((resolve, reject) => {
+      const cbName = "cb_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+      params.pin = PIN_ACTUAL;
+      params.callback = cbName;
+      const query = new URLSearchParams(params).toString();
+      const script = document.createElement("script");
+      script.src = `${API_URL}?${query}`;
+
+      const timeout = setTimeout(() => {
+        delete window[cbName];
+        script.remove();
+        reject(new Error("Tiempo de espera agotado"));
+      }, 15000);
+
+      window[cbName] = (res) => {
+        clearTimeout(timeout);
+        delete window[cbName];
+        script.remove();
+        resolve(res);
+      };
+
+      script.onerror = () => {
+        clearTimeout(timeout);
+        delete window[cbName];
+        script.remove();
+        reject(new Error("Error de red"));
+      };
+
+      document.body.appendChild(script);
+    });
+  }
+
+  async function cargarDatos(silencioso) {
+    setEstadoSync("Sincronizando...", true);
+    try {
+      const res = await llamarAPI({ accion: "leer" });
+      if (res.status === "ok") {
+        localStorage.setItem("finanzas_pin", PIN_ACTUAL);
+        DATOS = res;
+        localStorage.setItem("finanzas_cache_v2", JSON.stringify(DATOS));
+        document.getElementById("login-screen").style.display = "none";
+        renderizarTodo();
+        setEstadoSync("Sincronizado", false);
       } else {
-        alert("Error: " + json.message);
+        setEstadoSync("Error PIN", false);
+        if (!silencioso) alert("PIN incorrecto o error: " + res.message);
       }
-      mostrarLoader(false);
+    } catch (e) {
+      setEstadoSync("Sin conexión", false);
+      if (!silencioso) alert("No se pudo conectar con Google Sheets.");
+    }
+  }
+
+  function cambiarTab(id, btn) {
+    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.getElementById("tab-" + id).classList.add("active");
+    btn.classList.add("active");
+  }
+
+  function formatoMoneda(num) {
+    return "$" + Number(num || 0).toLocaleString("es-AR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  }
+
+  function toggleTransferencia() {
+    const esTransf = document.getElementById("mov-tipo").value === "Transferencia";
+    document.getElementById("grp-banco-destino").style.display = esTransf ? "flex" : "none";
+    document.getElementById("lbl-banco-origen").textContent = esTransf ? "Cuenta Origen" : "Cuenta / Tarjeta / Efectivo";
+    document.getElementById("grp-rubro").style.display = esTransf ? "none" : "flex";
+    document.getElementById("grp-subgrupo").style.display = esTransf ? "none" : "flex";
+    document.getElementById("grp-detalle").style.display = esTransf ? "none" : "flex";
+    document.getElementById("grp-cuotas").style.display = esTransf ? "none" : "flex";
+  }
+
+  function renderizarTodo() {
+    poblarSelects();
+    renderizarResumen();
+    renderizarMovimientos();
+    renderizarArbolRubros();
+    renderizarObligaciones();
+    renderizarBancosConfig();
+  }
+
+  function poblarSelects() {
+    const selBancos = ["mov-banco", "mov-banco-destino", "ob-banco"];
+    selBancos.forEach(id => {
+      const el = document.getElementById(id);
+      const prev = el.value;
+      el.innerHTML = DATOS.bancos.map(b => `<option value="${b.Entidad}">${b.Entidad} (${b.Tipo})</option>`).join("");
+      if (prev) el.value = prev;
+    });
+
+    const fBanco = document.getElementById("filtro-mov-banco");
+    const prevFB = fBanco.value;
+    fBanco.innerHTML = `<option value="">Todas las cuentas</option>` + DATOS.bancos.map(b => `<option value="${b.Entidad}">${b.Entidad}</option>`).join("");
+    fBanco.value = prevFB;
+
+    const rubrosUnicos = [...new Set(DATOS.rubros.map(r => r.Rubro).filter(Boolean))];
+    const selRubro = document.getElementById("mov-rubro");
+    const prevR = selRubro.value;
+    selRubro.innerHTML = rubrosUnicos.map(r => `<option value="${r}">${r}</option>`).join("");
+    if (prevR && rubrosUnicos.includes(prevR)) selRubro.value = prevR;
+
+    const fRubro = document.getElementById("filtro-mov-rubro");
+    const prevFR = fRubro.value;
+    fRubro.innerHTML = `<option value="">Todos los rubros</option>` + rubrosUnicos.map(r => `<option value="${r}">${r}</option>`).join("");
+    fRubro.value = prevFR;
+
+    document.getElementById("lista-n1").innerHTML = rubrosUnicos.map(r => `<option value="${r}">`).join("");
+    const subsUnicos = [...new Set(DATOS.rubros.map(r => r.Subgrupo).filter(Boolean))];
+    document.getElementById("lista-n2").innerHTML = subsUnicos.map(s => `<option value="${s}">`).join("");
+
+    actualizarSelectSubgrupos();
+  }
+
+  function actualizarSelectSubgrupos() {
+    const rubroSel = document.getElementById("mov-rubro").value;
+    const subs = [...new Set(DATOS.rubros.filter(r => r.Rubro === rubroSel).map(r => r.Subgrupo))];
+    const selSub = document.getElementById("mov-subgrupo");
+    selSub.innerHTML = subs.map(s => `<option value="${s}">${s}</option>`).join("");
+    actualizarSelectDetalles();
+  }
+
+  function actualizarSelectDetalles() {
+    const rubroSel = document.getElementById("mov-rubro").value;
+    const subSel = document.getElementById("mov-subgrupo").value;
+    const dets = [...new Set(DATOS.rubros.filter(r => r.Rubro === rubroSel && r.Subgrupo === subSel).map(r => r.Detalle))];
+    const selDet = document.getElementById("mov-detalle");
+    selDet.innerHTML = dets.map(d => `<option value="${d}">${d}</option>`).join("");
+  }
+
+  function calcularSaldos() {
+    const saldos = {};
+    DATOS.bancos.forEach(b => { saldos[b.Entidad] = Number(b.Saldo_Inicial || 0); });
+    DATOS.movimientos.forEach(m => {
+      if (saldos[m.Banco] === undefined) saldos[m.Banco] = 0;
+      const tipo = String(m.Tipo_Movimiento || "");
+      const monto = Number(m.Monto || 0);
+      if (tipo === "Entrada" || tipo === "Transferencia Entrada") saldos[m.Banco] += monto;
+      else saldos[m.Banco] -= monto;
+    });
+    return saldos;
+  }
+
+  function renderizarResumen() {
+    const saldos = calcularSaldos();
+    const mesSel = document.getElementById("filtro-mes").value;
+    const contTarjetas = document.getElementById("tarjetas-bancos");
+    const alertaDiv = document.getElementById("alerta-liquidez");
+    contTarjetas.innerHTML = "";
+    let alertas = [];
+
+    DATOS.bancos.forEach(b => {
+      const saldo = saldos[b.Entidad] || 0;
+      const limite = Number(b.Limite_Descubierto || 0);
+      const esTarjeta = String(b.Tipo).includes("Tarjeta");
+      const pendOblig = DATOS.obligaciones
+        .filter(o => o.Estado === "Pendiente" && o.Banco_Asignado === b.Entidad)
+        .reduce((acc, o) => acc + Number(o.Monto_Estimado || 0), 0);
+
+      let clase = "bank-card";
+      let textoExtra = "";
+      if (esTarjeta) {
+        clase += " credit";
+        const deuda = saldo < 0 ? Math.abs(saldo) : 0;
+        const disponible = limite - deuda;
+        textoExtra = `Deuda acumulada: <b>${formatoMoneda(deuda)}</b><br>Cupo disponible: <b>${formatoMoneda(disponible)}</b>`;
+      } else {
+        const proyectado = saldo - pendOblig;
+        if (proyectado < 0) {
+          clase += " danger";
+          alertas.push(`Faltante proyectado de ${formatoMoneda(Math.abs(proyectado))} en <b>${b.Entidad}</b> por vencimientos/cheques pendientes.`);
+        } else if (pendOblig > 0) {
+          clase += " warning";
+        }
+        textoExtra = `Vencimientos/Cheques pend.: ${formatoMoneda(pendOblig)}<br>Saldo proyectado: <b>${formatoMoneda(proyectado)}</b>`;
+      }
+
+      contTarjetas.innerHTML += `
+        <div class="card ${clase}">
+          <div style="font-size:0.75rem; font-weight:700; color:var(--muted); text-transform:uppercase;">${b.Tipo}</div>
+          <div style="font-weight:700; font-size:1.05rem;">${b.Entidad}</div>
+          <div class="amount" style="color:${saldo < 0 ? 'var(--danger)' : 'var(--text)'}">${formatoMoneda(saldo)}</div>
+          <div class="subtext">${textoExtra}</div>
+        </div>
+      `;
+    });
+
+    alertaDiv.innerHTML = alertas.length
+      ? alertas.map(a => `<div class="alert alert-danger">⚠️ ${a}</div>`).join("")
+      : `<div class="alert alert-success">✅ Liquidez cubierta para todos los vencimientos y cheques pendientes.</div>`;
+
+    const movsMes = DATOS.movimientos.filter(m => String(m.Fecha || "").startsWith(mesSel));
+    const ingresosMes = movsMes.filter(m => m.Tipo_Movimiento === "Entrada").reduce((a, m) => a + Number(m.Monto || 0), 0);
+    const gastosMesArr = movsMes.filter(m => m.Tipo_Movimiento === "Salida");
+    const gastosMes = gastosMesArr.reduce((a, m) => a + Number(m.Monto || 0), 0);
+
+    document.getElementById("resumen-mes-totales").innerHTML =
+      `Ingresos del mes: <b style="color:var(--success)">${formatoMoneda(ingresosMes)}</b> &nbsp;|&nbsp; Gastos del mes: <b style="color:var(--danger)">${formatoMoneda(gastosMes)}</b>`;
+
+    const porRubro = {};
+    gastosMesArr.forEach(m => {
+      const r = m.Rubro || "General";
+      porRubro[r] = (porRubro[r] || 0) + Number(m.Monto || 0);
+    });
+
+    dibujarGraficoTorta(porRubro, gastosMes);
+
+    const pendientes = DATOS.obligaciones.filter(o => o.Estado === "Pendiente").sort((a, b) => String(a.Fecha_Vencimiento).localeCompare(String(b.Fecha_Vencimiento)));
+    document.getElementById("tabla-proximos").innerHTML = pendientes.slice(0, 6).map(o => `
+      <tr>
+        <td>${o.Fecha_Vencimiento}</td>
+        <td>${o.Banco_Asignado}</td>
+        <td>${o.Concepto} <span class="badge bg-pend">${o.Tipo}</span></td>
+        <td><b>${formatoMoneda(o.Monto_Estimado)}</b></td>
+        <td><button class="btn-sm btn-pay" onclick="pagarObligacion('${o.ID}')">Pagar</button></td>
+      </tr>
+    `).join("") || `<tr><td colspan="5" style="text-align:center; color:var(--muted);">Sin vencimientos pendientes</td></tr>`;
+  }
+
+  function dibujarGraficoTorta(porRubro, total) {
+    const canvas = document.getElementById("pie-chart");
+    const ctx = canvas.getContext("2d");
+    const legend = document.getElementById("pie-legend");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const entradas = Object.entries(porRubro).sort((a, b) => b[1] - a[1]);
+    if (!entradas.length || total <= 0) {
+      ctx.fillStyle = "#e2e8f0";
+      ctx.beginPath();
+      ctx.arc(115, 115, 95, 0, Math.PI * 2);
+      ctx.fill();
+      legend.innerHTML = `<div class="subtext">Sin gastos registrados en el mes seleccionado.</div>`;
       return;
     }
 
-    localStorage.setItem("finanzas_pin", PIN_ACTUAL);
-    document.getElementById("login-screen").style.display = "none";
-    DATOS = json;
-    procesarYRenderizar();
-  } catch (e) {
-    alert("No se pudo conectar con Google Drive. Verificá que hayas actualizado la implementación en Apps Script.");
-  }
-  mostrarLoader(false);
-}
+    let anguloInicio = -Math.PI / 2;
+    legend.innerHTML = "";
 
-function procesarYRenderizar() {
-  const selMov = document.getElementById("mov-banco");
-  const selObl = document.getElementById("obl-banco");
-  const selFiltro = document.getElementById("filtro-banco");
-  
-  selMov.innerHTML = "";
-  selObl.innerHTML = "";
-  selFiltro.innerHTML = '<option value="TODOS">Todos los bancos</option>';
+    entradas.forEach(([rubro, monto], idx) => {
+      const color = COLORES_TORTA[idx % COLORES_TORTA.length];
+      const porcion = (monto / total) * Math.PI * 2;
+      const pct = ((monto / total) * 100).toFixed(1);
 
-  DATOS.bancos.forEach(b => {
-    const opt = `<option value="${b.Entidad}">${b.Entidad}</option>`;
-    selMov.innerHTML += opt;
-    selObl.innerHTML += opt;
-    selFiltro.innerHTML += opt;
-  });
+      ctx.beginPath();
+      ctx.moveTo(115, 115);
+      ctx.arc(115, 115, 100, anguloInicio, anguloInicio + porcion);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+      anguloInicio += porcion;
 
-  const saldosPorBanco = {};
-  DATOS.bancos.forEach(b => {
-    saldosPorBanco[b.Entidad] = {
-      inicial: Number(b.Saldo_Inicial) || 0,
-      actual: Number(b.Saldo_Inicial) || 0,
-      limite: Number(b.Limite_Descubierto) || 0,
-      tipo: b.Tipo,
-      pendientePagar: 0,
-      pendienteCobrar: 0
-    };
-  });
-
-  DATOS.movimientos.forEach(m => {
-    const monto = Number(m.Monto) || 0;
-    if (!saldosPorBanco[m.Banco]) {
-      saldosPorBanco[m.Banco] = { inicial: 0, actual: 0, limite: 0, tipo: "Cuenta", pendientePagar: 0, pendienteCobrar: 0 };
-    }
-    if (m.Tipo_Movimiento === "Entrada") saldosPorBanco[m.Banco].actual += monto;
-    else saldosPorBanco[m.Banco].actual -= monto;
-  });
-
-  const hoy = new Date();
-  hoy.setHours(0,0,0,0);
-  
-  let totalIngresosFuturos = 0;
-  let totalEgresosFuturos = 0;
-  let htmlAlertas = "";
-
-  const obligacionesOrdenadas = [...DATOS.obligaciones].sort((a, b) => new Date(a.Fecha_Vencimiento) - new Date(b.Fecha_Vencimiento));
-  const tbodyObl = document.getElementById("tabla-obligaciones");
-  tbodyObl.innerHTML = "";
-
-  obligacionesOrdenadas.forEach(o => {
-    const fechaStr = o.Fecha_Vencimiento ? o.Fecha_Vencimiento.toString().split("T")[0] : "";
-    const fechaVenc = new Date(fechaStr + "T00:00:00");
-    const diffDias = Math.ceil((fechaVenc - hoy) / (1000 * 60 * 60 * 24));
-    const monto = Number(o.Monto_Estimado) || 0;
-    const pendiente = o.Estado !== "Completado";
-
-    let badgeEstado = `<span class="badge badge-in">Completado</span>`;
-    if (pendiente) {
-      if (o.Tipo === "Ingreso Esperado") {
-        totalIngresosFuturos += monto;
-        if (saldosPorBanco[o.Banco_Asignado]) saldosPorBanco[o.Banco_Asignado].pendienteCobrar += monto;
-        badgeEstado = `<span class="badge badge-extra">A cobrar (${diffDias} días)</span>`;
-      } else {
-        totalEgresosFuturos += monto;
-        if (saldosPorBanco[o.Banco_Asignado]) saldosPorBanco[o.Banco_Asignado].pendientePagar += monto;
-
-        if (diffDias < 0) {
-          badgeEstado = `<span class="badge badge-out">VENCIDO (${Math.abs(diffDias)} d)</span>`;
-          htmlAlertas += `<div class="alerta alerta-roja"><span>⚠️ <strong>VENCIDO:</strong> ${o.Concepto} (${o.Banco_Asignado}) por <strong>${formatoPesos(monto)}</strong></span><span>Venció el ${fechaStr}</span></div>`;
-        } else if (diffDias <= 5) {
-          badgeEstado = `<span class="badge badge-out">Vence en ${diffDias} d</span>`;
-          htmlAlertas += `<div class="alerta alerta-amarilla"><span>⏰ <strong>PRÓXIMO VENCIMIENTO:</strong> ${o.Concepto} (${o.Banco_Asignado}) por <strong>${formatoPesos(monto)}</strong></span><span>Vence el ${fechaStr}</span></div>`;
-        } else {
-          badgeEstado = `<span class="badge">En ${diffDias} días</span>`;
-        }
-      }
-    }
-
-    tbodyObl.innerHTML += `
-      <tr>
-        <td><strong>${fechaStr}</strong></td>
-        <td>${badgeEstado}</td>
-        <td>${o.Tipo} <small style="color:var(--gris);">(${o.Frecuencia})</small></td>
-        <td>${o.Banco_Asignado}</td>
-        <td>${o.Concepto}</td>
-        <td style="text-align:right; font-weight:600;" class="${o.Tipo === 'Ingreso Esperado' ? 'positivo' : 'negativo'}">${formatoPesos(monto)}</td>
-        <td>
-          ${pendiente ? `<button type="button" class="btn-small" style="background:var(--secundario); color:white;" onclick="marcarPagado('${o.ID}', '${o.Tipo}', '${o.Banco_Asignado}', '${o.Concepto}', ${monto}, '${o.Frecuencia}')">✔ Registrar</button>` : '—'}
-        </td>
-      </tr>
-    `;
-  });
-
-  const gridBancos = document.getElementById("grid-bancos");
-  gridBancos.innerHTML = "";
-  let totalLiquidezActual = 0;
-
-  Object.keys(saldosPorBanco).forEach(nombre => {
-    const info = saldosPorBanco[nombre];
-    totalLiquidezActual += info.actual;
-    const proyectadoBanco = info.actual + info.pendienteCobrar - info.pendientePagar;
-    const disponibleConAcuerdo = proyectadoBanco + info.limite;
-
-    if (proyectadoBanco < 0) {
-      htmlAlertas += `
-        <div class="alerta alerta-roja">
-          <span>🚨 <strong>ALERTA DE LIQUIDEZ EN ${nombre.toUpperCase()}:</strong> Faltarán <strong>${formatoPesos(Math.abs(proyectadoBanco))}</strong> para cubrir los vencimientos asignados a esta cuenta.</span>
-          <span>Saldo hoy: ${formatoPesos(info.actual)}</span>
+      legend.innerHTML += `
+        <div class="legend-item">
+          <div><span class="legend-dot" style="background:${color}"></span><b>${rubro}</b></div>
+          <div>${formatoMoneda(monto)} <span style="color:var(--muted)">(${pct}%)</span></div>
         </div>
       `;
-    }
-
-    gridBancos.innerHTML += `
-      <div class="card">
-        <h3>${nombre}</h3>
-        <div class="monto-grande ${info.actual >= 0 ? 'positivo' : 'negativo'}">${formatoPesos(info.actual)}</div>
-        <div style="font-size:0.85rem; color:var(--gris); margin-top:8px; border-top:1px solid #f1f5f9; padding-top:8px;">
-          <div>+ A cobrar: <strong class="positivo">${formatoPesos(info.pendienteCobrar)}</strong></div>
-          <div>- A pagar: <strong class="negativo">${formatoPesos(info.pendientePagar)}</strong></div>
-          <div style="margin-top:4px; font-weight:600; color:var(--texto);">
-            Proyectado: <span class="${proyectadoBanco >= 0 ? 'positivo' : 'negativo'}">${formatoPesos(proyectadoBanco)}</span>
-          </div>
-          ${info.limite > 0 ? `<div style="font-size:0.8rem;">Con acuerdo (${formatoPesos(info.limite)}): ${formatoPesos(disponibleConAcuerdo)}</div>` : ''}
-        </div>
-      </div>
-    `;
-  });
-
-  document.getElementById("contenedor-alertas").innerHTML = htmlAlertas || `<div class="alerta alerta-verde">✅ Todas tus cuentas tienen liquidez suficiente para cubrir las obligaciones agendadas.</div>`;
-  document.getElementById("total-actual").innerText = formatoPesos(totalLiquidezActual);
-  document.getElementById("total-ingresos-futuros").innerText = formatoPesos(totalIngresosFuturos);
-  document.getElementById("total-egresos-futuros").innerText = formatoPesos(totalEgresosFuturos);
-  
-  const netoFinal = totalLiquidezActual + totalIngresosFuturos - totalEgresosFuturos;
-  const elProy = document.getElementById("total-proyectado");
-  elProy.innerText = formatoPesos(netoFinal);
-  elProy.className = "monto-grande " + (netoFinal >= 0 ? "positivo" : "negativo");
-
-  renderizarMovimientos();
-}
-
-function renderizarMovimientos() {
-  const filtroBanco = document.getElementById("filtro-banco").value;
-  const filtroTipo = document.getElementById("filtro-tipo").value;
-  const tbody = document.getElementById("tabla-movimientos");
-  tbody.innerHTML = "";
-
-  let movs = [...DATOS.movimientos].sort((a, b) => new Date(a.Fecha) - new Date(b.Fecha));
-  
-  let saldoAcumulado = 0;
-  if (filtroBanco === "TODOS") {
-    DATOS.bancos.forEach(b => saldoAcumulado += (Number(b.Saldo_Inicial) || 0));
-  } else {
-    const bco = DATOS.bancos.find(b => b.Entidad === filtroBanco);
-    if (bco) saldoAcumulado = Number(bco.Saldo_Inicial) || 0;
+    });
   }
 
-  const filasCalculadas = [];
-  movs.forEach(m => {
-    if (filtroBanco !== "TODOS" && m.Banco !== filtroBanco) return;
-    const monto = Number(m.Monto) || 0;
-    if (m.Tipo_Movimiento === "Entrada") saldoAcumulado += monto;
-    else saldoAcumulado -= monto;
+  function renderizarArbolRubros() {
+    const mesSel = document.getElementById("filtro-mes").value;
+    const gastosMes = DATOS.movimientos.filter(m => m.Tipo_Movimiento === "Salida" && String(m.Fecha || "").startsWith(mesSel));
+    const arbol = {};
 
-    if (filtroTipo !== "TODOS" && m.Tipo_Movimiento !== filtroTipo) return;
+    DATOS.rubros.forEach(r => {
+      if (!arbol[r.Rubro]) arbol[r.Rubro] = {};
+      if (!arbol[r.Rubro][r.Subgrupo]) arbol[r.Rubro][r.Subgrupo] = [];
+      arbol[r.Rubro][r.Subgrupo].push(r);
+    });
 
-    filasCalculadas.push({ ...m, saldoResultante: saldoAcumulado });
-  });
+    const cont = document.getElementById("arbol-rubros");
+    cont.innerHTML = Object.entries(arbol).map(([rubro, subgrupos], idx) => {
+      const gastoRubro = gastosMes.filter(m => m.Rubro === rubro).reduce((a, m) => a + Number(m.Monto || 0), 0);
+      let presRubro = 0;
 
-  filasCalculadas.reverse().forEach(m => {
-    const fechaStr = m.Fecha ? m.Fecha.toString().split("T")[0] : "";
-    const esEntrada = m.Tipo_Movimiento === "Entrada";
-    const monto = Number(m.Monto) || 0;
+      const htmlSubs = Object.entries(subgrupos).map(([sub, items]) => {
+        const gastoSub = gastosMes.filter(m => m.Rubro === rubro && m.Subgrupo === sub).reduce((a, m) => a + Number(m.Monto || 0), 0);
+        const htmlItems = items.map(it => {
+          const pres = Number(it.Presupuesto || 0);
+          presRubro += pres;
+          const gastoDet = gastosMes.filter(m => m.Rubro === rubro && m.Subgrupo === sub && m.Detalle_Rubro === it.Detalle).reduce((a, m) => a + Number(m.Monto || 0), 0);
+          const pct = pres > 0 ? Math.min(100, Math.round((gastoDet / pres) * 100)) : 0;
+          const cls = pres > 0 && gastoDet > pres ? "over" : (pct >= 80 ? "warn" : "");
+          return `
+            <div class="tree-detalle">
+              <span>• ${it.Detalle}</span>
+              <span>
+                <b>${formatoMoneda(gastoDet)}</b> ${pres > 0 ? `/ ${formatoMoneda(pres)} <span class="prog-bar"><span class="prog-fill ${cls}" style="width:${pct}%"></span></span>` : ''}
+              </span>
+            </div>
+          `;
+        }).join("");
 
-    tbody.innerHTML += `
+        return `
+          <div class="tree-subgrupo">
+            <div class="tree-sub-hdr">
+              <span>▸ ${sub}</span>
+              <span>${formatoMoneda(gastoSub)}</span>
+            </div>
+            ${htmlItems}
+          </div>
+        `;
+      }).join("");
+
+      return `
+        <div class="tree-rubro">
+          <div class="tree-rubro-hdr" onclick="const b=document.getElementById('rb-${idx}'); b.style.display=b.style.display==='none'?'block':'none';">
+            <span>▼ ${rubro}</span>
+            <span>Gastado: ${formatoMoneda(gastoRubro)} ${presRubro > 0 ? `(Presup: ${formatoMoneda(presRubro)})` : ''}</span>
+          </div>
+          <div class="tree-rubro-body" id="rb-${idx}">${htmlSubs}</div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function renderizarMovimientos() {
+    const fBanco = document.getElementById("filtro-mov-banco").value;
+    const fRubro = document.getElementById("filtro-mov-rubro").value;
+    const filtrados = DATOS.movimientos
+      .filter(m => (!fBanco || m.Banco === fBanco) && (!fRubro || m.Rubro === fRubro))
+      .slice().reverse();
+
+    document.getElementById("tabla-movimientos").innerHTML = filtrados.map(m => {
+      const esEntrada = String(m.Tipo_Movimiento).includes("Entrada");
+      const esTransf = String(m.Tipo_Movimiento).includes("Transferencia");
+      const badgeCls = esTransf ? "bg-tr" : (esEntrada ? "bg-in" : "bg-out");
+      return `
+        <tr>
+          <td>${m.Fecha}</td>
+          <td><span class="badge ${badgeCls}">${m.Tipo_Movimiento}</span></td>
+          <td>${m.Banco}</td>
+          <td><b>${m.Rubro || ''}</b> › ${m.Subgrupo || ''} › ${m.Detalle_Rubro || ''}</td>
+          <td>${m.Descripcion}</td>
+          <td>${m.Cuota || '1 pago'}</td>
+          <td><b>${formatoMoneda(m.Monto)}</b></td>
+          <td><button class="btn-sm btn-del" onclick="eliminarMovimiento('${m.ID}')">X</button></td>
+        </tr>
+      `;
+    }).join("") || `<tr><td colspan="8" style="text-align:center; color:var(--muted);">Sin movimientos para este filtro</td></tr>`;
+  }
+
+  function renderizarObligaciones() {
+    document.getElementById("tabla-obligaciones").innerHTML = DATOS.obligaciones.map(o => `
       <tr>
-        <td><strong>${fechaStr}</strong></td>
-        <td>${m.Banco}</td>
-        <td>
-          <span class="badge ${esEntrada ? 'badge-in' : 'badge-out'}">${m.Tipo_Movimiento}</span>
-          ${m.Subtipo === 'Extraordinario' ? '<span class="badge badge-extra">Extra</span>' : ''}
-        </td>
-        <td><strong>${m.Categoria}</strong><br><small style="color:var(--gris);">${m.Descripcion}</small></td>
-        <td style="text-align:right;" class="positivo">${esEntrada ? formatoPesos(monto) : '—'}</td>
-        <td style="text-align:right;" class="negativo">${!esEntrada ? formatoPesos(monto) : '—'}</td>
-        <td style="text-align:right; font-weight:700;">${formatoPesos(m.saldoResultante)}</td>
+        <td>${o.Fecha_Vencimiento}</td>
+        <td>${o.Tipo}</td>
+        <td>${o.Banco_Asignado}</td>
+        <td>${o.Concepto}</td>
+        <td><b>${formatoMoneda(o.Monto_Estimado)}</b></td>
+        <td><span class="badge ${o.Estado === 'Completado' ? 'bg-in' : 'bg-pend'}">${o.Estado}</span></td>
+        <td>${o.Estado === 'Pendiente' ? `<button class="btn-sm btn-pay" onclick="pagarObligacion('${o.ID}')">Pagar ahora</button>` : 'Pagado'}</td>
       </tr>
-    `;
-  });
-}
+    `).join("") || `<tr><td colspan="7" style="text-align:center; color:var(--muted);">Sin vencimientos agendados</td></tr>`;
+  }
 
-function guardarMovimiento(e) {
-  e.preventDefault();
-  cargarDatos(false, {
-    accion: "nuevo_movimiento",
-    fecha: document.getElementById("mov-fecha").value,
-    tipo_movimiento: document.getElementById("mov-tipo").value,
-    subtipo: document.getElementById("mov-subtipo").value,
-    banco: document.getElementById("mov-banco").value,
-    categoria: document.getElementById("mov-categoria").value,
-    descripcion: document.getElementById("mov-desc").value,
-    monto: document.getElementById("mov-monto").value
-  });
-  document.getElementById("mov-desc").value = "";
-  document.getElementById("mov-monto").value = "";
-}
+  function renderizarBancosConfig() {
+    document.getElementById("tabla-bancos-config").innerHTML = DATOS.bancos.map(b => `
+      <tr>
+        <td><b>${b.Entidad}</b></td>
+        <td>${b.Tipo}</td>
+        <td>${formatoMoneda(b.Saldo_Inicial)}</td>
+        <td>${formatoMoneda(b.Limite_Descubierto)}</td>
+        <td>${b.Notas || ''}</td>
+      </tr>
+    `).join("");
+  }
 
-function guardarObligacion(e) {
-  e.preventDefault();
-  cargarDatos(false, {
-    accion: "nueva_obligacion",
-    fecha_vencimiento: document.getElementById("obl-fecha").value,
-    tipo: document.getElementById("obl-tipo").value,
-    frecuencia: document.getElementById("obl-frecuencia").value,
-    banco_asignado: document.getElementById("obl-banco").value,
-    concepto: document.getElementById("obl-concepto").value,
-    monto_estimado: document.getElementById("obl-monto").value
-  });
-  document.getElementById("obl-concepto").value = "";
-  document.getElementById("obl-monto").value = "";
-}
+  async function guardarMovimiento() {
+    const tipo = document.getElementById("mov-tipo").value;
+    const monto = document.getElementById("mov-monto").value;
+    if (!monto || Number(monto) <= 0) return alert("Ingresá un monto válido");
 
-async function marcarPagado(id, tipo, banco, concepto, monto, frecuencia) {
-  if (!confirm(`¿Confirmás registrar "${concepto}" por ${formatoPesos(monto)} en ${banco} y descontarlo/acreditarlo en tus movimientos de hoy?`)) return;
-  
-  const hoyStr = new Date().toISOString().split("T")[0];
-  await cargarDatos(false, { accion: "pagar_obligacion", id: id });
-  await cargarDatos(false, {
-    accion: "nuevo_movimiento",
-    fecha: hoyStr,
-    tipo_movimiento: tipo === "Ingreso Esperado" ? "Entrada" : "Salida",
-    subtipo: frecuencia === "Mensual" ? "Regular" : "Extraordinario",
-    banco: banco,
-    categoria: "Vencimiento Agendado",
-    descripcion: concepto,
-    monto: monto
-  });
-}
+    setEstadoSync("Guardando...", true);
+    try {
+      let res;
+      if (tipo === "Transferencia") {
+        res = await llamarAPI({
+          accion: "transferencia",
+          fecha: document.getElementById("mov-fecha").value,
+          origen: document.getElementById("mov-banco").value,
+          destino: document.getElementById("mov-banco-destino").value,
+          descripcion: document.getElementById("mov-desc").value,
+          monto: monto
+        });
+      } else {
+        res = await llamarAPI({
+          accion: "nuevo_movimiento",
+          fecha: document.getElementById("mov-fecha").value,
+          tipo_movimiento: tipo,
+          subtipo: Number(document.getElementById("mov-cuotas").value) > 1 ? "Cuotas" : "Contado",
+          banco: document.getElementById("mov-banco").value,
+          rubro: document.getElementById("mov-rubro").value,
+          subgrupo: document.getElementById("mov-subgrupo").value,
+          detalle_rubro: document.getElementById("mov-detalle").value,
+          cuotas: document.getElementById("mov-cuotas").value,
+          descripcion: document.getElementById("mov-desc").value || document.getElementById("mov-detalle").value,
+          monto: monto
+        });
+      }
+      if (res.status === "ok") {
+        DATOS = res;
+        localStorage.setItem("finanzas_cache_v2", JSON.stringify(DATOS));
+        document.getElementById("mov-desc").value = "";
+        document.getElementById("mov-monto").value = "";
+        renderizarTodo();
+        setEstadoSync("Sincronizado", false);
+      }
+    } catch (e) {
+      setEstadoSync("Error", false);
+      alert("Error al guardar movimiento.");
+    }
+  }
 
-function guardarBanco(e) {
-  e.preventDefault();
-  cargarDatos(false, {
-    accion: "guardar_banco",
-    entidad: document.getElementById("bco-nombre").value.trim(),
-    tipo: document.getElementById("bco-tipo").value,
-    saldo_inicial: document.getElementById("bco-saldo").value,
-    limite_descubierto: document.getElementById("bco-limite").value
-  });
-  document.getElementById("bco-nombre").value = "";
-}
+  async function eliminarMovimiento(id) {
+    if (!confirm("¿Eliminar este movimiento de Google Sheets?")) return;
+    setEstadoSync("Eliminando...", true);
+    const res = await llamarAPI({ accion: "eliminar_movimiento", id });
+    if (res.status === "ok") {
+      DATOS = res;
+      localStorage.setItem("finanzas_cache_v2", JSON.stringify(DATOS));
+      renderizarTodo();
+      setEstadoSync("Sincronizado", false);
+    }
+  }
+
+  async function guardarRubro() {
+    const rubro = document.getElementById("rub-nivel1").value.trim();
+    const subgrupo = document.getElementById("rub-nivel2").value.trim();
+    const detalle = document.getElementById("rub-nivel3").value.trim() || "General";
+    const presupuesto = document.getElementById("rub-presupuesto").value || 0;
+    if (!rubro || !subgrupo) return alert("Completá Nivel 1 y Nivel 2");
+
+    setEstadoSync("Guardando rubro...", true);
+    const res = await llamarAPI({ accion: "guardar_rubro", rubro, subgrupo, detalle, presupuesto });
+    if (res.status === "ok") {
+      DATOS = res;
+      localStorage.setItem("finanzas_cache_v2", JSON.stringify(DATOS));
+      document.getElementById("rub-nivel3").value = "";
+      renderizarTodo();
+      setEstadoSync("Sincronizado", false);
+    }
+  }
+
+  async function guardarObligacion() {
+    const concepto = document.getElementById("ob-concepto").value.trim();
+    const monto = document.getElementById("ob-monto").value;
+    if (!concepto || !monto) return alert("Completá concepto y monto");
+
+    setEstadoSync("Agendando...", true);
+    const res = await llamarAPI({
+      accion: "nueva_obligacion",
+      fecha_vencimiento: document.getElementById("ob-fecha").value,
+      tipo: document.getElementById("ob-tipo").value,
+      frecuencia: document.getElementById("ob-frec").value,
+      banco_asignado: document.getElementById("ob-banco").value,
+      concepto: concepto,
+      monto_estimado: monto
+    });
+    if (res.status === "ok") {
+      DATOS = res;
+      localStorage.setItem("finanzas_cache_v2", JSON.stringify(DATOS));
+      document.getElementById("ob-concepto").value = "";
+      document.getElementById("ob-monto").value = "";
+      renderizarTodo();
+      setEstadoSync("Sincronizado", false);
+    }
+  }
+
+  async function pagarObligacion(id) {
+    setEstadoSync("Registrando pago...", true);
+    const res = await llamarAPI({ accion: "pagar_obligacion", id, fecha_pago: hoy });
+    if (res.status === "ok") {
+      DATOS = res;
+      localStorage.setItem("finanzas_cache_v2", JSON.stringify(DATOS));
+      renderizarTodo();
+      setEstadoSync("Sincronizado", false);
+    }
+  }
+
+  async function guardarBanco() {
+    const entidad = document.getElementById("b-entidad").value.trim();
+    if (!entidad) return alert("Ingresá el nombre de la cuenta o tarjeta");
+
+    setEstadoSync("Guardando cuenta...", true);
+    const res = await llamarAPI({
+      accion: "guardar_banco",
+      entidad: entidad,
+      tipo: document.getElementById("b-tipo").value,
+      saldo_inicial: document.getElementById("b-saldo").value || 0,
+      limite_descubierto: document.getElementById("b-limite").value || 0,
+      notas: document.getElementById("b-notas").value.trim()
+    });
+    if (res.status === "ok") {
+      DATOS = res;
+      localStorage.setItem("finanzas_cache_v2", JSON.stringify(DATOS));
+      document.getElementById("b-entidad").value = "";
+      document.getElementById("b-notas").value = "";
+      renderizarTodo();
+      setEstadoSync("Sincronizado", false);
+    }
+  }
 </script>
 </body>
 </html>
